@@ -594,8 +594,12 @@ async function lerPainel(params) {
   const d = await r.json().catch(() => ({}));
   if (!r.ok) {
     const msg = d.message || d.erro || ("erro " + r.status);
-    if (/senha/i.test(msg)) return { senhaErrada: true };
-    if (/hubplace_painel/.test(msg) && /find|schema cache|does not exist/i.test(msg)) throw new Error("Falta rodar maquinas/sql/painel.sql no Supabase.");
+    // A funcao ainda nao existe no banco: a mensagem do PostgREST cita o
+    // parametro "senha", entao esta checagem vem ANTES da de senha errada.
+    if (d.code === "PGRST202" || (/hubplace_painel/.test(msg) && /find|schema cache|does not exist/i.test(msg))) {
+      throw new Error("Falta rodar maquinas/sql/painel.sql no Supabase: a função hubplace_painel ainda não existe.");
+    }
+    if (d.code === "28000" || /senha do painel incorreta/i.test(msg)) return { senhaErrada: true };
     throw new Error(msg);
   }
   if (d && d.erro) throw new Error(d.erro);
