@@ -1,0 +1,1746 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubplace · Máquinas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  /* ==================================================================
+     PAINEL DE CONTROLE, NAO DASHBOARD
+
+     Cinco Macs em duas revendas de Orlando, cada um numa conta do
+     Facebook, publicando carro e respondendo comprador. Quem abre esta
+     tela e o dono, do celular, longe da loja. A pergunta dele nao e "as
+     maquinas estao de pe" - isso se responde em dois segundos e depois
+     nao serve para nada. E "quem esta esperando por mim, e ha quanto
+     tempo": telefone captado que ninguem ligou envelhece e morre.
+
+     Por isso: o herói é a FILA, e todo número é INSTRUMENTO. O relógio
+     de idade em mono, esquentando de verde a vermelho, é o mesmo em toda
+     a tela - fila, máquina, conversa. A barra escura da esquerda é a
+     régua de lâmpadas: cinco luzes, uma por conta.
+
+     Papel e tinta do Hubplace; limão só na marca; verde é dinheiro
+     (telefone, venda); vermelho é o que envelheceu.
+     ================================================================== */
+  :root {
+    /* O design system do grupo (o mesmo do Hub): asfalto de patio, papel de
+       nota. Desde 26/09/2026 todas as maquinas sao Fastline, entao o acento
+       e o dourado da Fastline - so marca, foco e acao. */
+    --papel:#FBFAF8; --caixa:#FFFFFF; --nevoa:#F2F0EC; --fina:#F6F5F2; --linha:#E4E1DC; --linha-2:#EFEDE9;
+    --tinta:#1A1D21; --tinta-2:#39414A; --tinta-3:#6B7480; --tinta-4:#A7AEB7;
+    --laje:#1A1D21; --laje-2:#13161A; --laje-texto:#A7AEB7; --laje-claro:#FBFAF8;
+    --ouro:#C2871F; --ouro-ink:#9A6A12; --ouro-luz:#FBF1DF;
+    --laje-raised:rgba(255,255,255,.07); --laje-hover:rgba(255,255,255,.045); --laje-line:rgba(255,255,255,.09);
+    --neon:#C6FF3D; --online:#34C98E;
+    --marca:#F26522; --marca-ink:#C0562A; --marca-luz:#FFF1E9;
+    --dinheiro:#0F7A57; --dinheiro-luz:#E4F3EC;
+    --brasa:#C23B2E; --brasa-luz:#FBEBE8;
+    --ambar:#B7791F; --ambar-ink:#8A5A12; --ambar-luz:#FBF3E4;
+    --sombra:0 1px 2px rgba(20,21,26,.05);
+    --sans:"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --titulo:var(--sans);
+    /* numero e leitura de instrumento: mesma familia, algarismos tabulares */
+    --dado:var(--sans);
+    --rail:228px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --papel:#14171B; --caixa:#1B1F24; --nevoa:#242930; --fina:#20242A; --linha:#2C3239; --linha-2:#252A31;
+      --tinta:#F1F2F4; --tinta-2:#C7CCD3; --tinta-3:#8E96A1; --tinta-4:#5F6772;
+      --laje:#0E1114; --laje-2:#090B0D;
+      --ouro:#E0A93F; --ouro-ink:#E8BD66; --ouro-luz:#33291A;
+      --marca:#F26522; --marca-ink:#F58E5C; --marca-luz:#33221A;
+      --dinheiro:#3FBF8C; --dinheiro-luz:#163327;
+      --brasa:#E8756A; --brasa-luz:#38201D;
+      --ambar:#D9A44A; --ambar-ink:#E4BC72; --ambar-luz:#322812;
+      --sombra:0 1px 2px rgba(0,0,0,.45);
+      color-scheme:dark;
+    }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--papel); color:var(--tinta); font:14px/1.5 var(--sans); -webkit-font-smoothing:antialiased; font-feature-settings:"tnum" 1, "cv11" 1; }
+  [hidden] { display:none !important; }
+  button, input { font:inherit; color:inherit; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+
+  /* ---------------------------------------------- a régua de lâmpadas --- */
+  .app { display:grid; grid-template-columns:var(--rail) minmax(0,1fr); min-height:100vh;
+    /* a régua é uma coluna, não um bloco: a tinta desce até o fim da página */
+    background:linear-gradient(to right, var(--laje) 0 var(--rail), var(--papel) var(--rail)); }
+  .rail { background:var(--laje); color:var(--laje-texto); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; user-select:none; }
+  .rail .marca { display:flex; align-items:center; gap:9px; padding:18px 18px 16px; text-decoration:none; cursor:pointer; }
+  .rail .marca:hover b { color:#fff; }
+  /* No desktop a marca e o caminho de volta para a fila, entao "Agora" seria
+     uma linha repetida. No celular a marca nao cabe na barra de baixo: la ele
+     e a unica saida, e volta. */
+  .rail a.so-celular { display:none; }
+  .rail .marca:focus-visible { outline:2px solid var(--lateral-ativo); outline-offset:-4px; border-radius:10px; }
+  .rail .marca svg { width:21px; height:21px; flex:none; display:block; color:var(--laje-claro); }
+  .rail .marca b { font-family:var(--titulo); font-weight:900; font-size:14px; letter-spacing:-.05em; color:var(--laje-claro); }
+  .rail .marca b i { font-style:normal; color:var(--neon); }
+
+  .rail nav { display:flex; flex-direction:column; padding:0 10px; overflow-y:auto; }
+  .rail .grupo { font:600 10px/1 var(--dado); letter-spacing:.14em; text-transform:uppercase; color:var(--laje-texto); opacity:.55; padding:16px 10px 8px; }
+  .rail a { position:relative; display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:9px; text-decoration:none; color:var(--laje-texto); cursor:pointer; min-width:0; font-size:13px; font-weight:600; }
+  .rail a:hover { color:var(--laje-claro); background:var(--laje-hover); }
+  .rail a[aria-current="page"] { color:var(--laje-claro); background:var(--laje-raised); box-shadow:inset 0 0 0 1px var(--laje-line); }
+  .rail a b { font-weight:inherit; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1; }
+  .rail a .idade { font:600 11px/1 var(--dado); color:var(--laje-texto); opacity:.75; flex:none; }
+  .rail a .fila { font:700 11px/17px var(--dado); min-width:18px; height:18px; padding:0 5px; border-radius:999px; text-align:center; background:var(--laje-raised); color:var(--laje-claro); box-shadow:inset 0 0 0 1px var(--laje-line); flex:none; }
+  .rail a .fila.velha { background:var(--brasa); color:#fff; box-shadow:none; }
+  .rail a svg.grade { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; flex:none; opacity:.8; }
+
+  /* a lâmpada: acesa com brilho, apagada como contorno. É o desenho que o
+     app usa nas luzes de sistema, e aqui vira a identidade da barra. */
+  .luz { width:8px; height:8px; border-radius:50%; flex:none; background:transparent; box-shadow:inset 0 0 0 1.5px var(--laje-texto); opacity:.55; }
+  .luz.ok { background:var(--online); box-shadow:0 0 0 3px rgba(52,201,142,.16); opacity:1; }
+  .luz.atencao { background:#E2B34A; box-shadow:0 0 0 3px rgba(226,179,74,.16); opacity:1; }
+  .luz.ruim { background:#F07C6C; box-shadow:0 0 0 3px rgba(240,124,108,.18); opacity:1; }
+
+  .rail .pe { margin-top:auto; padding:12px 20px 14px; font:500 10.5px/1.4 var(--dado); color:var(--laje-texto); opacity:.6; border-top:1px solid var(--laje-line); }
+  .rail .pe button { display:block; margin-top:6px; background:none; border:0; padding:0; color:inherit; font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+  .rail .pe button:hover { color:var(--laje-claro); }
+
+  /* --------------------------------------------------------- conteúdo --- */
+  main { min-width:0; display:flex; flex-direction:column; }
+  .folha { padding:26px 32px 72px; max-width:1180px; width:100%; }
+  @media (max-width:900px) { .folha { padding:20px 18px 48px; } }
+
+  /* o cabeçalho de seção: eyebrow em mono + título display */
+  .secao { margin:44px 0 0; }
+  .secao:first-child { margin-top:0; }
+  .olho { font:600 10.5px/1 var(--dado); letter-spacing:.16em; text-transform:uppercase; color:var(--tinta-3); display:flex; align-items:center; gap:10px; }
+  .olho::after { content:""; flex:1; height:1px; background:var(--linha); }
+  .titulo { font-family:var(--titulo); font-weight:900; letter-spacing:-.045em; margin:12px 0 0; }
+  h1.titulo { font-size:clamp(26px, 3.4vw, 38px); line-height:1.05; }
+  h2.titulo { font-size:19px; line-height:1.2; }
+  .sub { color:var(--tinta-3); font-size:13.5px; margin-top:6px; max-width:62ch; }
+
+  /* o relógio de idade: o instrumento que se repete na tela inteira */
+  .idade { font:700 13px/1 var(--dado); letter-spacing:-.02em; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .idade.frio { color:var(--tinta-4); }
+  .idade.verde { color:var(--dinheiro); }
+  .idade.ambar { color:var(--ambar-ink); }
+  .idade.vermelho { color:var(--brasa); }
+
+  .num { font-family:var(--dado); font-variant-numeric:tabular-nums; letter-spacing:-.02em; }
+
+  /* ------------------------------------------------------------- fila --- */
+  .fila-topo { display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap; }
+  .fila-topo .direita { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .periodo { display:inline-flex; border:1px solid var(--linha); border-radius:9px; overflow:hidden; background:var(--caixa); }
+  .periodo button { border:0; background:none; font:600 12px/1 var(--dado); letter-spacing:.02em; color:var(--tinta-3); padding:0 11px; min-height:32px; cursor:pointer; }
+  .periodo button + button { border-left:1px solid var(--linha); }
+  .periodo button[aria-pressed="true"] { background:var(--tinta); color:var(--papel); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:1px solid var(--linha); border-radius:9px; background:var(--caixa); color:var(--tinta); padding:0 12px; min-height:32px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; text-decoration:none; }
+  .btn:hover { background:var(--fina); }
+  .btn.tinta { background:var(--tinta); border-color:var(--tinta); color:var(--papel); }
+  .btn:focus-visible, input:focus-visible, .linha:focus-visible, .rail a:focus-visible, .periodo button:focus-visible, .aba:focus-visible { outline:2px solid var(--marca); outline-offset:2px; }
+
+  /* cada item da fila é uma linha alta, clicável, com o relógio na frente:
+     a idade é o que decide a ordem de ligar, então vem primeiro */
+  .lista { margin-top:18px; border-top:1px solid var(--linha); max-width:940px; }
+  .linha { display:grid; grid-template-columns:64px minmax(0,1fr) auto; align-items:center; gap:16px; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--linha-2); padding:14px 6px; cursor:pointer; position:relative; }
+  .linha:hover { background:var(--caixa); }
+  .linha::before { content:""; position:absolute; left:-6px; top:0; bottom:0; width:2px; background:transparent; }
+  .linha:hover::before { background:var(--marca); }
+  .linha .quem { font-weight:700; font-size:15px; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .linha .onde { color:var(--tinta-3); font-size:12.5px; margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .linha .direita { display:flex; align-items:center; gap:12px; }
+  .fone { font:700 13px/1 var(--dado); color:var(--dinheiro); white-space:nowrap; text-decoration:none; }
+  .fone:hover { text-decoration:underline; }
+  /* ligar e passar adiante moram na propria linha: e o que o dono faz com ela */
+  .icone { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border:1px solid var(--linha); border-radius:8px; background:var(--caixa); color:var(--tinta-2); cursor:pointer; padding:0; flex:none; }
+  .icone:hover { border-color:var(--tinta-4); color:var(--tinta); }
+  .icone svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .icone.feito { color:var(--dinheiro); border-color:color-mix(in srgb, var(--dinheiro) 45%, var(--linha)); }
+  .como-link { border:0; background:none; padding:0; font:inherit; color:var(--tinta); font-weight:650; text-decoration:underline; text-underline-offset:2px; cursor:pointer; }
+  .metricas.escopos { margin-bottom:0; }
+  .marca-motivo { font:700 10px/1 var(--dado); letter-spacing:.1em; text-transform:uppercase; padding:4px 7px; border-radius:5px; background:var(--fina); color:var(--tinta-3); }
+  .marca-motivo.telefone { background:var(--dinheiro-luz); color:var(--dinheiro); }
+  .marca-motivo.escalada { background:var(--ambar-luz); color:var(--ambar-ink); }
+
+  .vazio-fila { margin-top:20px; padding:22px 24px; border:1px dashed var(--linha); border-radius:12px; color:var(--tinta-3); font-size:13.5px; }
+  .vazio-fila b { display:block; color:var(--tinta); font-family:var(--titulo); font-weight:900; font-size:19px; letter-spacing:-.03em; margin-bottom:5px; }
+
+  /* ---------------------------------------------------------- máquinas --- */
+  .maquinas { margin-top:18px; border-top:1px solid var(--linha); }
+  .maq { display:grid; grid-template-columns:14px minmax(0,1.5fr) minmax(0,1.2fr) 96px auto; align-items:center; gap:16px; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--linha-2); padding:13px 6px; cursor:pointer; position:relative; }
+  .maq:hover { background:var(--caixa); }
+  .maq::before { content:""; position:absolute; left:-6px; top:0; bottom:0; width:2px; background:transparent; }
+  .maq:hover::before { background:var(--marca); }
+  .maq .nome { font-weight:700; font-size:14.5px; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .maq .conta { color:var(--tinta-3); font-size:12px; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .maq .faz { color:var(--tinta-2); font-size:12.5px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .maq .faz.alerta { color:var(--brasa); font-weight:600; }
+  .maq .hoje { display:flex; gap:14px; justify-content:flex-end; }
+  .maq .hoje div { text-align:right; }
+  .maq .hoje b { display:block; font:700 15px/1.1 var(--dado); }
+  .maq .hoje b.zero { color:var(--tinta-4); font-weight:500; }
+  .maq .hoje b.bom { color:var(--dinheiro); }
+  .maq .hoje small { display:block; font:500 9.5px/1 var(--dado); letter-spacing:.1em; text-transform:uppercase; color:var(--tinta-4); }
+  .traco svg { display:block; width:100%; height:26px; }
+  .traco.alto svg { height:120px; }
+  .traco .legenda { display:flex; justify-content:space-between; gap:12px; margin-top:6px; font:500 10.5px/1 var(--dado); letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-4); }
+
+  /* -------------------------------------------------------- no período --- */
+  .placar { margin-top:18px; }
+  .metricas { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:18px; }
+  .metricas button { border:1px solid var(--linha); background:var(--caixa); color:var(--tinta-3); border-radius:999px; padding:5px 12px; min-height:30px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .metricas button[aria-pressed="true"] { background:var(--tinta); border-color:var(--tinta); color:var(--papel); }
+  .barra-linha { display:grid; grid-template-columns:minmax(120px,190px) minmax(0,1fr) 62px; align-items:center; gap:14px; padding:7px 0; }
+  .barra-linha .r { font-size:13.5px; font-weight:600; }
+  .barra-linha .r span { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .barra-linha .r small { display:block; font-weight:400; color:var(--tinta-4); font-size:11.5px; line-height:1.3; }
+  .barra-linha i { height:26px; border-radius:4px; background:var(--nevoa); display:block; position:relative; }
+  .barra-linha i::after { content:""; position:absolute; inset:0; width:var(--w); border-radius:4px; background:var(--tinta-4); }
+  .barra-linha.lider i::after { background:var(--tinta); }
+  .barra-linha.lider .r { font-weight:800; }
+  .barra-linha .v { font:700 14px/1 var(--dado); text-align:right; }
+  .bloco .barra-linha { grid-template-columns:104px minmax(0,1fr) auto; gap:10px; }
+  .bloco .barra-linha i { height:20px; }
+  .bloco .barra-linha .v small { font-weight:500; color:var(--tinta-4); margin-left:5px; }
+  .barra-linha.sem .v, .barra-linha.sem .r { color:var(--tinta-4); }
+  .veredito { margin:18px 0 0; font-size:14.5px; line-height:1.55; max-width:70ch; color:var(--tinta-2); }
+  .veredito b { color:var(--tinta); font-weight:800; }
+  details.tabela { margin-top:20px; }
+  details.tabela summary { cursor:pointer; font:600 12px/1 var(--dado); letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-3); padding:8px 0; }
+  details.tabela summary:hover { color:var(--tinta); }
+  details.tabela[open] summary { margin-bottom:8px; }
+
+  .rolagem { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font:600 10px/1 var(--dado); letter-spacing:.1em; text-transform:uppercase; color:var(--tinta-3); padding:8px 14px 8px 0; border-bottom:1px solid var(--linha); white-space:nowrap; }
+  td { padding:11px 14px 11px 0; border-bottom:1px solid var(--linha-2); color:var(--tinta-2); vertical-align:middle; }
+  tr:last-child td { border-bottom:0; }
+  th.n, td.n { text-align:right; font-family:var(--dado); font-variant-numeric:tabular-nums; white-space:nowrap; padding-right:0; }
+  th.n { padding-right:0; }
+  td.forte { color:var(--tinta); font-weight:650; white-space:nowrap; }
+  td.forte small { display:block; font-weight:400; color:var(--tinta-4); font-size:11.5px; font-family:var(--sans); }
+  /* quantas vezes o anuncio foi renovado, embaixo da data de publicacao (como no app) */
+  td small.renov { display:block; font-weight:400; color:var(--tinta-4); font-size:11px; font-family:var(--sans); white-space:nowrap; }
+  /* a sentinela do historico desta maquina: a promessa "toda mensagem continua aqui", conferida */
+  .capa .historico { margin:6px 0 0; font-size:12px; color:var(--tinta-3); }
+  .capa .historico.ruim { color:var(--brasa); font-weight:650; }
+  /* hora aproximada: o Facebook so mostra a hora do grupo de mensagens */
+  .balao .meta .aprox { cursor:help; border-bottom:1px dotted currentColor; }
+  td.sem, .sem { color:var(--tinta-4); }
+  .lider-n { color:var(--dinheiro); font-weight:700; }
+
+  /* ------------------------------------------------- dentro da máquina --- */
+  .capa { display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  .capa .voltar { border:0; background:none; padding:0 0 8px; color:var(--tinta-3); font-size:12.5px; font-weight:600; cursor:pointer; display:inline-flex; gap:6px; }
+  .capa .voltar:hover { color:var(--tinta); }
+  .capa .direita { margin-left:auto; text-align:right; display:flex; align-items:center; gap:12px; }
+  .pilula { display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:999px; font:700 10.5px/1.4 var(--dado); letter-spacing:.06em; text-transform:uppercase; background:var(--fina); color:var(--tinta-2); white-space:nowrap; }
+  .pilula.ok { background:var(--dinheiro-luz); color:var(--dinheiro); }
+  .pilula.atencao { background:var(--ambar-luz); color:var(--ambar-ink); }
+  .pilula.ruim { background:var(--brasa-luz); color:var(--brasa); }
+
+  /* o painel de instrumentos: números grandes em mono, sem caixa em volta */
+  /* Flex, não grid: com cinco instrumentos numa tela estreita a grade
+     deixava um quadrado cinza sobrando na última linha. Aqui o que sobra é
+     dividido entre os instrumentos daquela linha. */
+  .instrumentos { display:flex; flex-wrap:wrap; border:1px solid var(--linha); border-radius:12px; overflow:hidden; margin-top:22px; background:var(--papel); }
+  .instrumentos div { flex:1 1 150px; padding:14px 16px; border-left:1px solid var(--linha); }
+  .instrumentos div:first-child { border-left:0; }
+  .instrumentos small { font:600 10px/1 var(--dado); letter-spacing:.12em; text-transform:uppercase; color:var(--tinta-3); }
+  .instrumentos b { display:block; font:700 26px/1.1 var(--dado); letter-spacing:-.03em; margin-top:7px; }
+  .instrumentos b em { font-style:normal; font-size:13px; font-weight:600; color:var(--tinta-4); margin-left:3px; }
+  .instrumentos b.vazio { color:var(--tinta-4); }
+  .instrumentos p { margin:5px 0 0; font-size:12px; color:var(--tinta-3); line-height:1.35; }
+  .instrumentos p.bom { color:var(--dinheiro); font-weight:600; }
+  .instrumentos p.ruim { color:var(--brasa); font-weight:600; }
+
+  .abas { display:flex; gap:2px; margin:34px 0 0; border-bottom:1px solid var(--linha); flex-wrap:wrap; }
+  .aba { border:0; background:none; color:var(--tinta-3); font-size:13px; font-weight:600; padding:9px 12px 11px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .aba:hover { color:var(--tinta); }
+  .aba[aria-selected="true"] { color:var(--tinta); border-bottom-color:var(--tinta); }
+  .aba .c { font-family:var(--dado); font-size:11px; color:var(--tinta-4); margin-left:5px; }
+  .aba[aria-selected="true"] .c { color:var(--tinta-2); }
+
+  /* caixa de entrada: lista à esquerda, conversa à direita. Ler a conversa
+     não pode empurrar a lista para fora da tela. */
+  .inbox { display:grid; grid-template-columns:340px minmax(0,1fr); gap:0; margin-top:20px; border:1px solid var(--linha); border-radius:12px; background:var(--caixa); overflow:hidden;
+    height:clamp(520px, calc(100vh - 260px), 820px); }
+  .inbox .coluna { border-right:1px solid var(--linha); display:flex; flex-direction:column; min-width:0; }
+  .filtros { display:flex; gap:2px; padding:8px 10px 0; border-bottom:1px solid var(--linha); flex-wrap:wrap; }
+  .filtros button { border:0; background:none; font-size:12px; font-weight:600; color:var(--tinta-3); padding:6px 8px 9px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; }
+  .filtros button[aria-pressed="true"] { color:var(--tinta); border-bottom-color:var(--tinta); }
+  .filtros button .c { font-family:var(--dado); font-size:10.5px; color:var(--tinta-4); margin-left:3px; }
+  .busca { padding:8px 10px; border-bottom:1px solid var(--linha-2); }
+  .busca input { width:100%; border:1px solid var(--linha); border-radius:8px; background:var(--papel); padding:6px 10px; font-size:12.5px; }
+  .conversas { overflow-y:auto; flex:1; min-height:0; }
+  .conv { display:flex; gap:10px; align-items:flex-start; width:100%; text-align:left; background:none; border:0; border-bottom:1px solid var(--linha-2); padding:11px 12px; cursor:pointer; position:relative; }
+  .conv:hover { background:var(--fina); }
+  .conv[aria-current="true"] { background:var(--nevoa); }
+  .conv[aria-current="true"]::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--marca); }
+  .ava { width:34px; height:34px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#fff; overflow:hidden; }
+  /* a foto do comprador, quando a maquina mandou (10/10/2026); sem ela, a inicial */
+  .ava img { width:100%; height:100%; object-fit:cover; display:block; }
+  .conv .t { min-width:0; flex:1; }
+  .conv .l1 { display:flex; align-items:baseline; gap:8px; }
+  .conv .quem { font-weight:650; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .conv .l1 .idade { margin-left:auto; font-size:11px; font-weight:600; }
+  .conv .carro { color:var(--tinta-3); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .conv .rodape { display:flex; align-items:center; gap:6px; margin-top:5px; flex-wrap:wrap; }
+  .conv .bola { font-size:11.5px; color:var(--tinta-4); }
+  .conv .bola.dele { color:var(--brasa); font-weight:650; }
+
+  .papo { display:flex; flex-direction:column; min-width:0; background:var(--papel); overflow:hidden; }
+  .papo .cab { display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--linha); background:var(--caixa); flex-wrap:wrap; }
+  .papo .cab .quem { font-weight:700; font-size:15px; letter-spacing:-.01em; }
+  .papo .cab .carro { color:var(--tinta-3); font-size:12.5px; }
+  .papo .cab .direita { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .papo .voltar-conv { display:none; }
+  .rolo { padding:18px 20px 22px; overflow-y:auto; flex:1; min-height:0; display:flex; flex-direction:column; }
+  .dia { align-self:stretch; display:flex; align-items:center; gap:10px; margin:12px 0 8px; }
+  .dia::before, .dia::after { content:""; height:1px; flex:1; background:var(--linha); }
+  .dia span { font:600 10px/1 var(--dado); letter-spacing:.1em; text-transform:uppercase; color:var(--tinta-4); }
+  .balao { max-width:min(78%, 560px); padding:9px 13px; border-radius:14px; font-size:13.5px; line-height:1.45; white-space:pre-wrap; word-break:break-word; }
+  .balao.comprador { align-self:flex-start; background:var(--caixa); border:1px solid var(--linha-2); border-bottom-left-radius:4px; }
+  .balao.nossa { align-self:flex-end; background:var(--dinheiro-luz); border-bottom-right-radius:4px; }
+  .balao .meta { display:flex; align-items:center; gap:5px; font:600 10px/1 var(--dado); letter-spacing:.06em; text-transform:uppercase; opacity:.6; margin-bottom:5px; }
+  .balao.daIA .meta { opacity:1; color:var(--dinheiro); }
+  .robo { display:inline-flex; color:currentColor; }
+  .robo svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; display:block; }
+  .balao + .balao { margin-top:3px; }
+  .balao.comprador + .balao.nossa, .balao.nossa + .balao.comprador { margin-top:14px; }
+  .balao + .balao .meta { display:none; }
+  .balao.comprador + .balao.nossa .meta, .balao.nossa + .balao.comprador .meta { display:flex; }
+  .dia + .balao .meta { display:flex; }
+  .ficha { display:flex; gap:8px; flex-wrap:wrap; padding:12px 18px; border-top:1px solid var(--linha-2); background:var(--caixa); }
+
+  /* ------------------------------------------------- blocos de padrão --- */
+  .grade { display:grid; gap:22px; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); margin-top:20px; }
+  .bloco h3 { margin:0 0 3px; font-size:14px; font-weight:700; letter-spacing:-.01em; }
+  .bloco p.d { margin:0 0 14px; font-size:12.5px; color:var(--tinta-3); }
+  .barra { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; margin:10px 0; font-size:13px; }
+  .barra span.txt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--tinta-2); }
+  .barra b { font:700 13px/1 var(--dado); }
+  .barra i { grid-column:1/-1; height:6px; border-radius:999px; background:var(--nevoa); display:block; position:relative; }
+  .barra i::after { content:""; position:absolute; inset:0; width:var(--w); border-radius:999px; background:var(--tinta-4); }
+  .barra.fone i::after { background:var(--dinheiro); }
+  .horas { display:grid; grid-template-columns:repeat(24,1fr); gap:3px; align-items:end; height:70px; margin-top:8px; }
+  .horas i { background:var(--tinta-4); border-radius:2px 2px 0 0; display:block; min-height:2px; }
+  .horas i.pico { background:var(--tinta); }
+  .horas-eixo { display:flex; justify-content:space-between; margin-top:6px; font:500 10px/1 var(--dado); color:var(--tinta-4); }
+
+  .diario li { display:grid; grid-template-columns:76px 92px minmax(0,1fr); gap:14px; padding:10px 0; border-bottom:1px solid var(--linha-2); font-size:13px; align-items:start; list-style:none; }
+  .diario { margin:18px 0 0; padding:0; border-top:1px solid var(--linha); }
+  .diario .q { font:500 11.5px/1.5 var(--dado); color:var(--tinta-4); white-space:nowrap; }
+  .diario .txt { color:var(--tinta-2); overflow-wrap:anywhere; }
+  .diario .det { display:block; color:var(--tinta-4); font-size:12px; margin-top:2px; }
+  .dia-sep { font:600 10px/1 var(--dado); letter-spacing:.12em; text-transform:uppercase; color:var(--tinta-3); padding:16px 0 6px; }
+
+  .vazio { padding:34px 4px; color:var(--tinta-3); font-size:13.5px; }
+  .vazio b { display:block; color:var(--tinta); font-family:var(--titulo); font-size:18px; font-weight:900; letter-spacing:-.03em; margin-bottom:5px; }
+  .aviso { margin:0 0 20px; padding:12px 16px; border-radius:10px; background:var(--ambar-luz); color:var(--ambar-ink); font-size:13px; }
+  .erro { margin:0 0 20px; padding:12px 16px; border-radius:10px; background:var(--brasa-luz); color:var(--brasa); font-size:13px; }
+  .nota { font-size:12.5px; color:var(--tinta-3); margin:14px 0 0; max-width:70ch; }
+  .carregando { padding:34px 4px; color:var(--tinta-4); font:500 12.5px/1 var(--dado); letter-spacing:.06em; text-transform:uppercase; }
+
+  /* ---------------------------------------------------------- entrada --- */
+  .entrada { max-width:340px; margin:16vh auto 0; padding:0 20px; }
+  .entrada .marca { display:flex; align-items:center; gap:9px; margin-bottom:22px; }
+  .entrada .marca svg { width:22px; height:22px; }
+  .entrada .marca b { font-family:var(--titulo); font-weight:900; font-size:15px; letter-spacing:-.05em; }
+  .entrada .marca b i { font-style:normal; color:#7AB800; }
+  .entrada p { color:var(--tinta-3); font-size:13px; }
+  .entrada form { display:flex; gap:8px; margin-top:14px; }
+  .entrada input { flex:1; border:1px solid var(--linha); border-radius:9px; background:var(--caixa); padding:8px 12px; }
+
+  /* ================================================== redesenho 13/10/2026 ===
+     Mesma regua, outra leitura: rotulo em frase (nada de CAIXA ALTA
+     espacada), uma familia so, cartao com raio 14 e quase sem sombra, e a
+     acao morando na linha da pessoa. */
+  .olho { font:500 13px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--tinta-3); }
+  .olho::after { display:none; }
+  .titulo { letter-spacing:-.035em; font-weight:800; }
+  h1.titulo { font-size:clamp(26px, 3vw, 34px); line-height:1.1; margin-top:4px; }
+  .rail .grupo, .instrumentos small, th, .maq .hoje small, .dia span, .balao .meta, .pilula, .marca-motivo,
+  .traco .legenda, details.tabela summary, .carregando, .dia-sep, .horas-eixo, .rail .pe, .diario .q, .periodo button {
+    text-transform:none; letter-spacing:0; font-family:var(--sans); }
+  .rail .grupo { font-size:12px; font-weight:600; opacity:.6; padding:18px 12px 6px; }
+  .instrumentos small { font-size:12.5px; font-weight:600; color:var(--tinta-3); }
+  .instrumentos b { font-weight:800; letter-spacing:-.03em; }
+  .instrumentos { border-radius:14px; background:var(--caixa); }
+  th { font-size:12px; font-weight:600; }
+  .pilula { font-size:12px; font-weight:600; padding:3px 10px; }
+  .marca-motivo { font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:999px; }
+  .balao .meta { font-size:11px; font-weight:600; }
+  .periodo { border-radius:10px; }
+  .periodo button { font-size:12.5px; font-weight:600; min-height:34px; padding:0 12px; }
+  .periodo button[aria-pressed="true"] { background:var(--tinta); color:var(--caixa); }
+  .btn { border-radius:10px; min-height:34px; font-weight:600; }
+  .btn:focus-visible, input:focus-visible, .linha:focus-visible, .rail a:focus-visible, .periodo button:focus-visible, .aba:focus-visible,
+  .pessoa:focus-visible, .card-maq:focus-visible, a.acao:focus-visible, button.acao:focus-visible { outline:2px solid var(--ouro); outline-offset:2px; }
+  .metricas { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+  .metricas::-webkit-scrollbar { display:none; }
+  .metricas button { flex:none; }
+  .inbox, .vazio-fila { border-radius:14px; }
+  .rail .marca b i { color:var(--ouro); }
+  .luz.ok { background:#34C98E; }
+
+  /* trilho: Agora com o contador, Análise, e as maquinas pelo nome da conta */
+  .rail a .cont { margin-left:auto; font:700 11.5px/18px var(--sans); min-width:20px; height:20px; padding:0 6px; border-radius:999px; text-align:center; background:var(--ouro); color:#1A1D21; flex:none; }
+  .rail a .fila { font-family:var(--sans); }
+  .rail .vagas { display:block; padding:8px 12px; font-size:12px; color:var(--laje-texto); opacity:.55; }
+  /* o icone do trilho tambem se chama .grade, como a grade dos blocos de
+     padrao, e herdava a margem dela: ficava meia linha abaixo do texto */
+  .rail a svg.grade { margin:0; display:block; }
+  @media (prefers-color-scheme: dark) { .acao.ligar { color:#08130E; } }
+
+  /* topo de cada tela */
+  .topo { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .topo .ferramentas { display:flex; gap:8px; align-items:center; }
+  .topo .quando { color:var(--tinta-3); font-size:13px; margin-top:4px; }
+
+  /* maquina parada: alerta em cima da fila, nao o titulo da pagina */
+  .alertas { display:grid; gap:8px; margin-top:20px; }
+  .alerta-maq { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:var(--brasa-luz); color:var(--brasa); border:1px solid color-mix(in srgb, var(--brasa) 22%, transparent); text-align:left; width:100%; cursor:pointer; font-size:13.5px; }
+  .alerta-maq b { font-weight:700; }
+  .alerta-maq span.o-que { color:var(--tinta-2); }
+  .alerta-maq .ir { margin-left:auto; font-weight:600; font-size:12.5px; white-space:nowrap; }
+
+  /* a fila */
+  .fila-cab { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-top:28px; }
+  .fila-cab h2 { margin:0; font-size:20px; font-weight:800; letter-spacing:-.03em; }
+  .fila-cab .partes { color:var(--tinta-3); font-size:13.5px; }
+  .fila-cab .partes b { color:var(--tinta); font-weight:700; }
+  .pessoas { display:grid; gap:8px; margin-top:14px; }
+  .pessoa { display:grid; grid-template-columns:76px 40px minmax(0,1fr) auto; align-items:center; gap:14px; padding:14px 16px; background:var(--caixa); border:1px solid var(--linha); border-radius:14px; cursor:pointer; text-align:left; }
+  .pessoa:hover { border-color:var(--tinta-4); }
+  .pessoa .espera { font:800 20px/1 var(--sans); letter-spacing:-.03em; }
+  .pessoa .espera small { display:block; font-size:11.5px; font-weight:500; letter-spacing:0; color:var(--tinta-3); margin-top:4px; }
+  .espera.verde { color:var(--dinheiro); } .espera.ambar { color:var(--ambar-ink); } .espera.vermelho { color:var(--brasa); } .espera.frio { color:var(--tinta-4); }
+  .pessoa .ava { width:40px; height:40px; font-size:15px; }
+  .pessoa .t { min-width:0; }
+  .pessoa .l1 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pessoa .quem { font-weight:700; font-size:15px; }
+  .pessoa .carro { color:var(--tinta-2); font-size:13.5px; }
+  .pessoa .resumo { color:var(--tinta-3); font-size:12.5px; margin-top:3px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+  .chip-maq { font-size:11.5px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--nevoa); color:var(--tinta-2); white-space:nowrap; }
+  .pessoa .acoes { display:flex; gap:6px; align-items:center; }
+  .acao { display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:0 12px; border-radius:10px; border:1px solid var(--linha); background:var(--caixa); color:var(--tinta); font-size:13px; font-weight:600; text-decoration:none; cursor:pointer; white-space:nowrap; }
+  .acao:hover { border-color:var(--tinta-4); }
+  .acao svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .acao.ligar { background:var(--dinheiro); border-color:var(--dinheiro); color:#fff; }
+  .acao.ligar:hover { filter:brightness(1.07); }
+  .acao.ligar .num { font-weight:600; opacity:.9; }
+  .acao.so-icone { width:36px; padding:0; justify-content:center; }
+  .acao.feito { color:var(--dinheiro); border-color:var(--dinheiro); }
+
+  /* as maquinas, em cartoes */
+  .cards-maq { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; margin-top:14px; }
+  .card-maq { display:flex; flex-direction:column; gap:12px; padding:16px; background:var(--caixa); border:1px solid var(--linha); border-radius:14px; cursor:pointer; text-align:left; width:100%; }
+  .card-maq:hover { border-color:var(--tinta-4); }
+  .card-maq .c1 { display:flex; align-items:center; gap:10px; }
+  .card-maq .c1 .nome { font-weight:800; font-size:16px; letter-spacing:-.02em; }
+  .card-maq .c1 .conta { color:var(--tinta-3); font-size:12.5px; }
+  .card-maq .c1 .sinal { margin-left:auto; font-size:12px; color:var(--tinta-3); white-space:nowrap; }
+  .card-maq .faz { font-size:13px; color:var(--tinta-2); min-height:2.6em; }
+  .card-maq .faz.alerta { color:var(--brasa); font-weight:600; }
+  .card-maq .nums { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; border-top:1px solid var(--linha-2); padding-top:12px; }
+  .card-maq .nums b { display:block; font-size:20px; font-weight:800; letter-spacing:-.03em; }
+  .card-maq .nums b.zero { color:var(--tinta-4); font-weight:600; }
+  .card-maq .nums b.bom { color:var(--dinheiro); }
+  .card-maq .nums small { color:var(--tinta-3); font-size:12px; }
+  .card-maq .luz { box-shadow:inset 0 0 0 1.5px var(--tinta-4); }
+  .card-maq.livre { border-style:dashed; background:transparent; cursor:default; justify-content:center; color:var(--tinta-3); font-size:13px; }
+  .card-maq.livre b { color:var(--tinta); font-size:15px; font-weight:700; display:block; margin-bottom:2px; }
+
+  /* ------------------------------------------------ responsivo 13/10 ---
+     Medido em 1280, 1024, 820, 600 e 390 px. */
+  /* os numeros da maquina: grade que se reparte por igual, com a divisoria
+     desenhada pelo vao (1px) - nenhum numero fica sozinho numa linha, e a
+     linha nunca some quando quebra */
+  .instrumentos { display:flex; flex-wrap:wrap; gap:1px; background:var(--linha); border:1px solid var(--linha); }
+  /* flex, nao grade: o que sobra na ultima linha se reparte entre os numeros
+     dela, e nao vira celula cinza vazia */
+  .instrumentos div { flex:1 1 160px; border-left:0; background:var(--caixa); }
+  /* abas e filtros rolam de lado em vez de quebrar em duas linhas */
+  .abas, .filtros { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  .abas::-webkit-scrollbar, .filtros::-webkit-scrollbar { display:none; }
+  .aba, .filtros button { flex:none; white-space:nowrap; }
+  /* caixa de entrada: lado a lado so com largura de sobra; abaixo disso,
+     a lista e a conversa se revezam, como no celular */
+  @media (max-width:1180px) {
+    .inbox { grid-template-columns:1fr; height:auto; min-height:0; }
+    .inbox .coluna { border-right:0; max-height:70vh; }
+    .inbox.lendo .coluna { display:none; }
+    .inbox:not(.lendo) .papo { display:none; }
+    .inbox.lendo .papo { height:min(78vh, 760px); }
+    .papo .voltar-conv { display:inline-flex; }
+  }
+  /* entre o celular e o notebook: o botao Ligar nao estica a tela inteira */
+  @media (min-width:601px) and (max-width:900px) {
+    .pessoa .acoes a.acao.ligar { flex:0 1 auto; padding:0 18px; }
+  }
+
+  /* ---------------------------------------------------------- celular --- */
+  @media (max-width:900px) {
+    /* no celular a régua vira a barra de baixo: a coluna escura da esquerda
+       nao existe mais, e pintar a tinta ali comia a metade do texto */
+    .app { grid-template-columns:1fr; padding-bottom:64px; background:var(--papel); }
+    .rail { position:fixed; top:auto; bottom:0; left:0; right:0; height:62px; flex-direction:row; align-items:center; z-index:40; border-top:1px solid var(--laje-line); }
+    .rail .marca, .rail .pe, .rail .grupo { display:none; }
+    .rail nav { flex-direction:row; flex:1; padding:8px; gap:4px; overflow-x:auto; }
+    .rail a { flex:1 1 0; flex-direction:column; justify-content:center; gap:3px; padding:4px 6px; min-width:64px; max-width:120px; font-size:11px; line-height:1.2; text-align:center; }
+    .rail nav { justify-content:space-around; }
+    .rail a svg.grade { width:15px; height:15px; }
+
+    .rail a b { flex:none; max-width:72px; }
+    .rail a .idade { display:none; }
+    .linha { grid-template-columns:52px minmax(0,1fr); gap:10px; padding:12px 4px; align-items:start; }
+    .linha > .idade { padding-top:2px; }
+    .linha .onde { margin-top:3px; }
+    .linha .direita { grid-column:2; justify-content:flex-start; margin-top:4px; }
+    .maq { grid-template-columns:14px minmax(0,1fr) auto; }
+    .maq .faz, .maq .traco { display:none; }
+    .inbox { grid-template-columns:1fr; min-height:0; }
+    .inbox .coluna { border-right:0; }
+    .inbox.lendo .coluna { display:none; }
+    .inbox:not(.lendo) .papo { display:none; }
+    .papo .voltar-conv { display:inline-flex; }
+    .conversas, .rolo { max-height:none; }
+    .barra-linha { grid-template-columns:minmax(90px,120px) minmax(0,1fr) 54px; gap:10px; }
+    .pessoa { grid-template-columns:40px minmax(0,1fr); gap:6px 12px; padding:14px; }
+    .pessoa .espera { grid-column:2; grid-row:1; font-size:15px; display:flex; gap:6px; align-items:baseline; }
+    .pessoa .espera small { display:inline; margin:0; }
+    .pessoa .ava { grid-row:1 / span 2; }
+    .pessoa .t { grid-column:2; }
+    .pessoa .acoes { grid-column:1 / -1; flex-wrap:wrap; }
+    .pessoa .acoes .acao.ligar { flex:1; justify-content:center; min-height:44px; }
+    .pessoa .acoes .acao { min-height:44px; }
+    .pessoa .acoes .acao.so-icone { width:44px; }
+    /* o contador mora no canto do icone, nunca em cima do nome */
+    .rail a .cont, .rail a .fila { position:absolute; top:1px; left:calc(50% + 4px); right:auto; margin:0; min-width:18px; height:18px; line-height:16px; font-size:10.5px; }
+    .alerta-maq { flex-wrap:wrap; }
+    .alerta-maq .ir { margin-left:0; }
+    .rail .vagas { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<template id="marcaHub">
+  <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="23" fill="none" stroke="currentColor" stroke-width="5.4"/><circle cx="32" cy="32" r="13.8" fill="#C6FF3D"/></svg><b>hubplace<i>.</i></b>
+</template>
+
+<div id="entradaTela" hidden>
+  <div class="entrada">
+    <span class="marca" id="marcaEntrada"></span>
+    <p>Digite a senha para ver as máquinas.</p>
+    <form id="formSenha">
+      <input type="password" id="senha" placeholder="senha do painel" autocomplete="current-password" required>
+      <button class="btn tinta" type="submit">Entrar</button>
+    </form>
+    <p id="erroEntrada" class="erro" style="margin-top:14px" hidden></p>
+  </div>
+</div>
+
+<div class="app" id="app" hidden>
+  <aside class="rail">
+    <a class="marca" id="marcaRail" data-ir="agora" title="Voltar para a fila"></a>
+    <nav id="nav"></nav>
+    <div class="pe">
+      <span id="carimbo"></span>
+      <button id="sair">sair</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="folha">
+      <div class="erro" id="erro" hidden></div>
+      <div class="aviso" id="avisoSql" hidden></div>
+      <section id="lista"></section>
+      <section id="analise" hidden></section>
+      <section id="maquina" hidden></section>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const CHAVE = "hubplace.painel.senha";
+const CHAVE_DIAS = "hubplace.painel.dias";
+
+/* ===================================================================
+   DE ONDE VEM O DADO
+
+   Ate 18/10/2026 esta pagina falava com /api/maquinas, uma funcao na
+   Vercel que guardava a chave de servico. A Vercel pausou a conta
+   gratuita (downloads dos instaladores) e o painel sumiu junto. Agora a
+   pagina e um HTML parado e chama a funcao hubplace_painel no Supabase
+   (maquinas/sql/painel.sql) com a chave anon, que e publica por desenho;
+   a senha vai no pedido e e conferida no banco antes de qualquer leitura.
+   =================================================================== */
+const SUPABASE_URL = "https://fvtwwbowmxqiqveoruuo.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2dHd3Ym93bXhxaXF2ZW9ydXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwOTMwMzksImV4cCI6MjEwMjY2OTAzOX0.jYEceCQ5Iam_aXOdEQVN96EP95vum_OO48xSzhOuijw";
+
+/* Le o painel. Devolve { senhaErrada: true } quando o banco recusou a senha;
+   qualquer outro erro vira excecao com a mensagem do banco. */
+async function lerPainel(params) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/hubplace_painel`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON, authorization: `Bearer ${SUPABASE_ANON}`, "content-type": "application/json" },
+    body: JSON.stringify({ senha, dias: dias === "tudo" ? 0 : (Number(dias) || 30), ...params }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const msg = d.message || d.erro || ("erro " + r.status);
+    if (/senha/i.test(msg)) return { senhaErrada: true };
+    if (/hubplace_painel/.test(msg) && /find|schema cache|does not exist/i.test(msg)) throw new Error("Falta rodar maquinas/sql/painel.sql no Supabase.");
+    throw new Error(msg);
+  }
+  if (d && d.erro) throw new Error(d.erro);
+  return d;
+}
+
+/* Comparar duas máquinas com três conversas cada não é análise, é ruído. */
+const MIN_AMOSTRA = 5;
+
+let senha = "", dias = "30";
+let ultimo = null, detalhe = null;
+let aberta = null, threadAberta = null;
+/* A tela aberta: "agora" (a fila e as maquinas) ou "analise" (o placar e os
+   padroes). Sao ritmos diferentes - o agora se olha vinte vezes por dia, a
+   analise duas por semana - e junta uma na outra so fazia rolar por cima. */
+let vista = "agora";
+let escopoAnalise = null;   // null = todas as máquinas
+let abaDetalhe = "inbox", filtroConversa = "todas", buscaConversa = "";
+let metrica = "taxa_telefone";
+let deployVisto = null;
+let ultimaMaquinaEm = 0;      // quando a máquina aberta foi lida por último
+let ultimoToque = Date.now(); // último sinal de que tem gente do outro lado
+const falas = new Map();
+
+/* ===================================================================
+   LER SÓ QUANDO ALGUÉM ESTÁ OLHANDO
+
+   Cada volta do relógio lê o banco inteiro: as cinco máquinas, o
+   analítico do período, a fila. Uma aba esquecida atrás de outras vinte
+   fazia isso 1.440 vezes por dia sem ninguém ver nada - e é dado saindo
+   do banco, que é exatamente a conta que estourou no Supabase.
+
+   Regra: aba escondida não lê. Aba visível mas parada há 20 minutos
+   também não - quem voltar mexe o mouse, e a leitura volta na hora.
+   =================================================================== */
+const PARADO_MS = 20 * 60_000;
+const DETALHE_MS = 3 * 60_000;
+const temGente = () => !document.hidden && Date.now() - ultimoToque < PARADO_MS;
+
+try { senha = localStorage.getItem(CHAVE) || ""; } catch {}
+try { dias = localStorage.getItem(CHAVE_DIAS) || "30"; } catch {}
+
+for (const alvo of ["marcaEntrada", "marcaRail"]) $(alvo).appendChild($("marcaHub").content.cloneNode(true));
+
+/* --------------------------------------------------------- vocabulário --- */
+
+const ESTADOS = {
+  trabalhando: { rotulo:"Trabalhando", classe:"ok" },
+  erro:        { rotulo:"Erro na volta", classe:"ruim" },
+  desligada:   { rotulo:"Desligada", classe:"" },
+  desconectada:{ rotulo:"Sem Facebook", classe:"ruim" },
+  checkpoint:  { rotulo:"Checkpoint", classe:"ruim" },
+  "sem-sinal": { rotulo:"Sem sinal", classe:"ruim" },
+  nunca:       { rotulo:"Nunca ligou", classe:"" },
+};
+const LOJA = { magicar:"MagiCar", fastline:"Fastline", "gts-motors":"GTS Motors" };
+const ASSUNTOS = {
+  disponivel:"Ainda está disponível", preco:"Preço e negociação", financiamento:"Financiamento",
+  entrada:"Entrada", troca:"Troca", milhas:"Milhas", historico:"Histórico e Carfax",
+  garantia:"Garantia", visita:"Quer ver o carro", endereco:"Onde fica",
+};
+const ESTAGIOS = {
+  "para-ligar":"Para ligar", contatado:"Contatado", visita:"Visita marcada",
+  negociando:"Negociando", vendido:"Vendido", perdido:"Perdido",
+};
+const SITUACAO_ANUNCIO = {
+  "no-ar":{ rotulo:"No ar", classe:"ok" }, "em-analise":{ rotulo:"Em análise", classe:"atencao" },
+  recusado:{ rotulo:"Recusado", classe:"ruim" }, vendido:{ rotulo:"Vendido", classe:"" },
+  retirado:{ rotulo:"Retirado", classe:"" },
+};
+/* O que o Facebook desenha em volta da conversa nao e fala de ninguem:
+   separador de data ("Seg, 22:00"), carimbo de estado ("Message sent",
+   "Enviado", "Visto") e o nome de quem escreveu, sozinho num balao.
+
+   O banco ja filtra isso (hubplace.e_carimbo). Aqui e a segunda tranca: vale
+   para o que ja esta no ar antes do SQL rodar, e para linha que escape.
+
+   Na duvida, e fala: cada padrao esta preso nas duas pontas. "read" sozinho e
+   carimbo; "read the carfax please" e o comprador falando. E o nome do
+   COMPRADOR nunca entra na regra - a IA pergunta "qual o seu nome?" e a
+   resposta e exatamente o nome dele. */
+const CARIMBOS = [
+  /^\d{1,2}:\d{2}( ?[ap]\.?m\.?)?$/i,
+  /^(seg|segunda|ter|ter[çc]a|qua|quarta|qui|quinta|sex|sexta|s[áa]b|s[áa]bado|dom|domingo|mon|monday|tue|tuesday|wed|wednesday|thu|thursday|fri|friday|sat|saturday|sun|sunday)(-feira)?[.,]? ?\d{1,2}:\d{2}( ?[ap]\.?m\.?)?$/i,
+  /^\d{1,2} de [a-zà-ú]+([, ]+\d{1,2}:\d{2})?$/i,
+  /^(mensagem enviada|message sent|enviad[ao]|sent)$/i,
+  /^(enviad[ao] +h|sent +\d)/i,
+  /^(visto|lido|entregue|delivered|seen|read)( (às|as|at) ?\d{1,2}:\d{2})?$/i,
+  /^(saiba mais|learn more|ver perfil|view profile|marketplace)$/i,
+];
+function eCarimbo(texto, perfilNome) {
+  const t = String(texto ?? "").trim().toLowerCase();
+  if (!t) return true;
+  if (perfilNome) {
+    const cheio = String(perfilNome).trim().toLowerCase();
+    // O Facebook desenha só o PRIMEIRO nome acima do balão: o perfil é
+    // "Marco Auto Sales" e o rótulo que vira lixo é "Marco".
+    const primeiro = cheio.split(/\s+/)[0] || "";
+    if (t === cheio || (primeiro.length >= 3 && t === primeiro)) return true;
+  }
+  return CARIMBOS.some((r) => r.test(t));
+}
+/** O nome do perfil do Facebook da máquina aberta, quando o painel sabe. */
+const nomeDoPerfil = () =>
+  (ultimo?.maquinas || []).find((m) => m.perfil_id === aberta)?.detalhe?.nomeNoFacebook ?? null;
+
+const ROBO = `<span class="robo" aria-hidden="true"><svg viewBox="0 0 16 16"><rect x="2.8" y="5.6" width="10.4" height="7.6" rx="2.6"/><path d="M8 5.6V3.4"/><path d="M5.9 9.3h.01M10.1 9.3h.01"/></svg></span>`;
+
+function estadoDe(m, agora, semSinalMin) {
+  if (!m.ultimo_sinal) return { estado:"nunca", quieto:null };
+  const quieto = Math.max(0, Math.round((agora - new Date(m.ultimo_sinal).getTime()) / 60000));
+  // Sem sinal vence tudo: o que a máquina dizia da última vez pode ter mudado.
+  if (quieto > semSinalMin) return { estado:"sem-sinal", quieto };
+  if (m.saude === "checkpoint") return { estado:"checkpoint", quieto };
+  if (m.conexao !== "conectada") return { estado:"desconectada", quieto };
+  if (!m.listings_ligados && !m.ia_ligada) return { estado:"desligada", quieto };
+  if (m.ultimo_erro) return { estado:"erro", quieto };
+  return { estado:"trabalhando", quieto };
+}
+function luzDe(estado) {
+  const c = ESTADOS[estado].classe;
+  return c === "ruim" ? "ruim" : estado === "trabalhando" ? "ok" : estado === "nunca" ? "" : "atencao";
+}
+/** O que a máquina está fazendo, em uma linha, sem jargão. */
+function oQueFaz(m, estado) {
+  if (estado === "nunca") return "Cole o código desta máquina no app, em Sistema.";
+  if (estado === "sem-sinal") return "Sinal antigo. Veja se o Mac está ligado e com internet.";
+  if (estado === "checkpoint") return "Resolva a verificação no Chrome daquela máquina.";
+  if (estado === "desconectada") return "Conecte a conta do Facebook naquela máquina.";
+  if (estado === "erro") return m.ultimo_erro || "A última volta falhou.";
+  if (estado === "desligada") return "Ligue a publicação e a IA no app daquela máquina.";
+  return [
+    m.listings_ligados ? "publicando" : "publicação desligada",
+    m.ia_ligada ? (m.ia_sozinha ? "IA responde sozinha" : "IA deixa pronto") : "IA desligada",
+  ].join(" · ");
+}
+
+/* ---------------------------------------------------------- instrumento --- */
+
+const n = (v) => (v === null || v === undefined ? null : Number(v));
+const nomeDe = (m) => m.rotulo || m.perfil_id;
+/* O nome que o dono usa: o da conta ("Andressa"), quando o rotulo traz entre
+   parenteses; senao "Maquina 3". "Fastline · maquina 1 (Andressa)" nao cabe
+   no menu e repete a loja, que hoje e uma so. */
+function nomeCurto(m) {
+  const r = String(nomeDe(m));
+  const conta = r.match(/\(([^)]+)\)\s*$/);
+  if (conta) return conta[1].trim();
+  const sem = r.replace(/^(fastline|magicar|gts motors)\s*[·:-]\s*/i, "").trim();
+  return sem ? sem.charAt(0).toUpperCase() + sem.slice(1) : r;
+}
+const ehVaga = (m) => !m.ultimo_sinal;
+const dinheiro = (v) => (v === null || v === undefined ? "—" : "$" + Number(v).toLocaleString("en-US"));
+const relogio = (iso) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" }) : "");
+const dataCurta = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { day:"2-digit", month:"short" }) : "—");
+const inicial = (nome) => String(nome || "?").trim().charAt(0).toUpperCase() || "?";
+function corDoNome(nome) {
+  let soma = 0;
+  for (const c of String(nome || "?")) soma = (soma * 31 + c.codePointAt(0)) % 360;
+  return `hsl(${soma} 45% 42%)`;
+}
+
+/* O relógio de idade. É o mesmo instrumento em toda a tela: fila, máquina,
+   conversa. Minutos até uma hora, depois hora e minuto, depois dias. */
+function idade(iso) {
+  if (!iso) return { texto:"—", classe:"frio", min:Infinity };
+  const min = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  const texto = min < 1 ? "agora" : min < 60 ? `${min}m` : min < 1440 ? `${Math.floor(min/60)}h ${String(min%60).padStart(2,"0")}` : `${Math.floor(min/1440)}d`;
+  return { texto, min, classe: min < 60 ? "verde" : min < 240 ? "ambar" : "vermelho" };
+}
+const idadeHtml = (iso) => { const i = idade(iso); return `<span class="idade ${i.classe}">${h(i.texto)}</span>`; };
+
+/** Quanto tempo a máquina está quieta, com a mesma régua do painel. */
+function silencio(quieto, semSinalMin) {
+  if (quieto === null) return { texto:"nunca", classe:"frio" };
+  const texto = quieto < 1 ? "agora" : quieto < 60 ? `${quieto}m` : quieto < 1440 ? `${Math.floor(quieto/60)}h ${String(quieto%60).padStart(2,"0")}` : `${Math.floor(quieto/1440)}d`;
+  return { texto, classe: quieto > semSinalMin ? "vermelho" : quieto > 5 ? "ambar" : "verde" };
+}
+
+const DIA_ORLANDO = new Intl.DateTimeFormat("en-CA", { timeZone:"America/New_York", year:"numeric", month:"2-digit", day:"2-digit" });
+/* Dia sem nada vira zero, não vira buraco: o buraco esconde justamente a
+   máquina que parou. O dia é o de Orlando, o mesmo que o banco conta. */
+function serieDe(linhas, quantosDias) {
+  const porDia = new Map((linhas || []).map((l) => [String(l.dia).slice(0, 10), l]));
+  const saida = [];
+  for (let i = quantosDias - 1; i >= 0; i--) {
+    const l = porDia.get(DIA_ORLANDO.format(new Date(Date.now() - i * 86400000)));
+    saida.push({ conversas: Number(l?.conversas || 0), telefones: Number(l?.telefones || 0) });
+  }
+  return saida;
+}
+function traco(serie, alto = false, legenda = true) {
+  const max = Math.max(1, ...serie.map((d) => d.conversas));
+  const larg = 100 / serie.length;
+  const barras = serie.map((d, i) => {
+    const alt = Math.max((d.conversas / max) * 100, d.conversas ? 4 : 2);
+    const fone = d.telefones ? Math.max((d.telefones / max) * 100, 4) : 0;
+    const x = i * larg + larg * 0.18, w = larg * 0.64;
+    return `<rect x="${x}" y="${100 - alt}" width="${w}" height="${alt}" rx="0.7" fill="${d.conversas ? "var(--tinta-4)" : "var(--linha)"}"></rect>`
+      + (fone ? `<rect x="${x}" y="${100 - fone}" width="${w}" height="${fone}" rx="0.7" fill="var(--dinheiro)"></rect>` : "");
+  }).join("");
+  const total = serie.reduce((s, d) => s + d.conversas, 0);
+  const fones = serie.reduce((s, d) => s + d.telefones, 0);
+  return `<div class="traco ${alto ? "alto" : ""}">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${barras}</svg>
+    ${legenda ? `<div class="legenda"><span>${serie.length} dias</span><span>${total} conversas · ${fones} telefones</span></div>` : ""}
+  </div>`;
+}
+
+/* ---------------------------------------------------------------- rail --- */
+
+// Só aparece no celular, onde a marca não cabe na barra de baixo.
+const ICONE_AGORA = `<svg class="grade" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>`;
+const ICONE_ANALISE = `<svg class="grade" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5V11M10 19.5V5M16 19.5v-6M22 19.5H3"/></svg>`;
+
+function pintarRail(maquinas, esperaPorPerfil, semSinalMin, totalNaFila = 0) {
+  const ativas = maquinas.filter((m) => !ehVaga(m));
+  const vagas = maquinas.length - ativas.length;
+  const linhas = ativas.map((m) => {
+    const s = silencio(m.quieto, semSinalMin);
+    const fila = esperaPorPerfil.get(m.perfil_id)?.quantos || 0;
+    // vermelho só quando alguém ali já espera há mais de quatro horas
+    const velha = (esperaPorPerfil.get(m.perfil_id)?.maisVelha ?? 0) > 240;
+    return `<a data-perfil="${h(m.perfil_id)}" ${aberta === m.perfil_id && vista !== "analise" ? 'aria-current="page"' : ""} title="${h(nomeDe(m))} · ${h(ESTADOS[m.estado].rotulo)}">
+      <i class="luz ${luzDe(m.estado)}"></i><b>${h(nomeCurto(m))}</b>
+      ${fila ? `<span class="fila ${velha ? "velha" : ""}">${fila}</span>` : `<span class="idade">${h(s.texto)}</span>`}
+    </a>`;
+  }).join("");
+  $("nav").innerHTML = `
+    <a data-ir="agora" ${vista === "agora" && !aberta ? 'aria-current="page"' : ""}>${ICONE_AGORA}<b>Agora</b>${totalNaFila ? `<span class="cont">${totalNaFila}</span>` : ""}</a>
+    <a data-ir="analise" ${vista === "analise" ? 'aria-current="page"' : ""}>${ICONE_ANALISE}<b>Análise</b></a>
+    <div class="grupo">Máquinas</div>
+    ${linhas || `<span class="vagas">Nenhuma máquina mandou sinal ainda.</span>`}
+    ${vagas ? `<span class="vagas">${vagas} ${vagas === 1 ? "vaga livre" : "vagas livres"}</span>` : ""}`;
+}
+
+/* ---------------------------------------------------------------- fila --- */
+
+/**
+ * O lead inteiro em texto, pronto para colar no WhatsApp do vendedor.
+ *
+ * O mesmo pacote que o app monta no cartao do lead. Aqui ele importa ainda
+ * mais: o painel e a tela que o dono abre FORA da loja, e ali passar adiante
+ * significava transcrever nome, telefone e carro na mao - e o resumo, que e a
+ * parte que faz o vendedor ligar sabendo do que falar, nunca ia junto.
+ *
+ * Sem emoji e sem markdown: isso vira mensagem de WhatsApp.
+ */
+function textoDoLead(e, nomeDaMaquina) {
+  const q = e.qualificacao || {};
+  const linhas = [e.comprador || "Comprador sem nome"];
+  if (e.telefone) linhas.push(e.telefone);
+  if (q.carro || e.carro) linhas.push(q.carro || e.carro);
+
+  const dados = [];
+  if (q.pagamento) dados.push(`Pagamento: ${q.pagamento === "a-vista" ? "À vista" : q.pagamento === "financiado" ? "Financiado" : q.pagamento}`);
+  if (q.troca) dados.push(/^n[aã]o tem$/i.test(String(q.troca).trim()) ? "Sem troca" : `Troca: ${q.troca}`);
+  if (q.entrada) dados.push(`Entrada: ${q.entrada}`);
+  if (q.idioma) dados.push(`Idioma: ${{ pt:"Português", en:"Inglês", es:"Espanhol" }[q.idioma] || q.idioma}`);
+  if (q.prazo) dados.push(`Prazo: ${q.prazo}`);
+  if (q.melhorHorario) dados.push(`Melhor horário: ${q.melhorHorario}`);
+  if (q.observacoes) dados.push(`Observações: ${q.observacoes}`);
+  if (dados.length) linhas.push("", ...dados);
+  if (q.resumo) linhas.push("", "Resumo da conversa:", q.resumo);
+
+  linhas.push("", `Lead do Marketplace, sem retorno há ${idade(e.desde).texto}. ${nomeDaMaquina || ""}`.trim());
+  return linhas.join("\n");
+}
+
+const ICONE_COPIA = `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/></svg>`;
+const ICONE_OK = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg>`;
+const ICONE_FONE = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>`;
+const ICONE_WA = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5A8.5 8.5 0 0 1 7.6 19L4 20l1-3.5A8.5 8.5 0 1 1 20 11.5z"/><path d="M9 8.8c.3 2.6 2.4 4.8 5 5.2l1.2-1.3 1.8.8-.4 1.6c-3.6.4-8-3.8-7.6-7.4L10.6 7l.8 1.8z"/></svg>`;
+// Passar adiante: a seta que sai da caixa.
+const ICONE_PASSAR = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5V2.5"/><path d="M5 5.5L8 2.5l3 3"/><path d="M2.5 9.5v3a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3"/></svg>`;
+
+function pintarLista(d) {
+  const agora = new Date(d.agora).getTime();
+  const maquinas = d.maquinas.map((m) => ({ ...m, ...estadoDe(m, agora, d.semSinalMin) }));
+  const ativas = maquinas.filter((m) => !ehVaga(m));
+  const vagas = maquinas.length - ativas.length;
+  const nomeDaMaquina = new Map(maquinas.map((m) => [m.perfil_id, nomeCurto(m)]));
+
+  /* O mesmo telefone em duas maquinas e a MESMA pessoa: uma linha so, com as
+     duas contas. Fica a espera mais antiga, que e a que decide a ordem. */
+  const porPessoa = new Map();
+  for (const e of d.espera || []) {
+    const fone = String(e.telefone || "").replace(/[^0-9]/g, "");
+    const chave = fone || `${e.perfil_id}|${e.thread_id}`;
+    const ja = porPessoa.get(chave);
+    if (!ja) { porPessoa.set(chave, { ...e, perfis: [e.perfil_id] }); continue; }
+    if (!ja.perfis.includes(e.perfil_id)) ja.perfis.push(e.perfil_id);
+    if (new Date(e.desde) < new Date(ja.desde)) Object.assign(ja, { ...e, perfis: ja.perfis });
+  }
+  const espera = [...porPessoa.values()].sort((a, b) => new Date(a.desde) - new Date(b.desde));
+
+  const esperaPorPerfil = new Map();
+  for (const e of d.espera || []) {
+    const atual = esperaPorPerfil.get(e.perfil_id) || { quantos: 0, maisVelha: 0 };
+    atual.quantos += 1;
+    atual.maisVelha = Math.max(atual.maisVelha, idade(e.desde).min);
+    esperaPorPerfil.set(e.perfil_id, atual);
+  }
+
+  const fones = espera.filter((e) => e.motivo === "telefone").length;
+  const responder = espera.length - fones;
+  const paradas = ativas.filter((m) => ESTADOS[m.estado].classe === "ruim");
+  const hoje = new Date(d.agora).toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"long", timeZone:"America/New_York" });
+
+  const alertas = paradas.map((m) => `<button class="alerta-maq" data-perfil="${h(m.perfil_id)}">
+      <i class="luz ruim"></i><span><b>${h(nomeCurto(m))}: ${h(ESTADOS[m.estado].rotulo.toLowerCase())}.</b> <span class="o-que">${h(oQueFaz(m, m.estado))}</span></span>
+      <span class="ir">Abrir a máquina</span>
+    </button>`).join("");
+
+  const pessoas = espera.map((e) => {
+    const i = idade(e.desde);
+    const q = e.qualificacao || {};
+    const digitos = String(e.telefone || "").replace(/[^0-9+]/g, "");
+    const contas = e.perfis.map((p) => `<span class="chip-maq">${h(nomeDaMaquina.get(p) || p)}</span>`).join("");
+    const nomeDaConta = e.perfis.map((p) => nomeDaMaquina.get(p) || p).join(", ");
+    return `<div class="pessoa" role="button" tabindex="0" data-perfil="${h(e.perfil_id)}" data-thread="${h(e.thread_id)}">
+      <span class="espera ${i.classe}">${h(i.texto)}<small>${e.motivo === "telefone" ? "sem ligação" : "sem resposta"}</small></span>
+      <span class="ava" style="background:${corDoNome(e.comprador)}">${h(inicial(e.comprador))}</span>
+      <span class="t">
+        <span class="l1"><span class="quem">${h(e.comprador || "Comprador sem nome")}</span>${contas}</span>
+        <span class="carro">${h(q.carro || e.carro || "carro não identificado")}</span>
+        ${q.resumo ? `<span class="resumo">${h(q.resumo)}</span>` : ""}
+      </span>
+      <span class="acoes">
+        ${digitos
+          ? `<a class="acao ligar" href="tel:${h(digitos)}">${ICONE_FONE}Ligar <span class="num">${h(e.telefone)}</span></a>
+             <a class="acao so-icone" href="https://wa.me/${h(digitos.replace(/^\+/, ""))}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp">${ICONE_WA}</a>`
+          : `<span class="acao" aria-hidden="true">Responder na conversa</span>`}
+        <button class="acao so-icone" data-copiar="${h(textoDoLead(e, nomeDaConta))}" data-titulo="Copiar para o vendedor" title="Copiar para o vendedor" aria-label="Copiar para o vendedor">${ICONE_PASSAR}</button>
+      </span>
+    </div>`;
+  }).join("");
+
+  const cards = ativas.map((m) => {
+    const s = silencio(m.quieto, d.semSinalMin);
+    const ruim = ESTADOS[m.estado].classe === "ruim";
+    const num = (v, rot, classe = "") => `<div><b class="${v ? classe : "zero"}">${v ?? 0}</b><small>${rot}</small></div>`;
+    return `<button class="card-maq" data-perfil="${h(m.perfil_id)}">
+      <span class="c1"><i class="luz ${luzDe(m.estado)}"></i>
+        <span><span class="nome">${h(nomeCurto(m))}</span><br><span class="conta">${h(String(nomeDe(m)).replace(/\s*\([^)]*\)\s*$/, ""))}</span></span>
+        <span class="sinal">sinal <span class="idade ${s.classe}">${h(s.texto)}</span></span></span>
+      <span class="faz ${ruim ? "alerta" : ""}">${h(ruim ? ESTADOS[m.estado].rotulo + ". " + oQueFaz(m, m.estado) : oQueFaz(m, m.estado))}</span>
+      ${traco(serieDe((d.serie || []).filter((x) => x.perfil_id === m.perfil_id), 14), false, false)}
+      <span class="nums">${num(m.listings_no_ar, "no ar")}${num(m.conversas_hoje, "conversas hoje")}${num(m.telefones_hoje, "telefones hoje", "bom")}</span>
+    </button>`;
+  }).join("") + (vagas ? `<div class="card-maq livre"><span><b>${vagas} ${vagas === 1 ? "vaga livre" : "vagas livres"}</b>Para ligar uma máquina nova, cole o código dela no app, em Sistema.</span></div>` : "");
+
+  $("lista").innerHTML = `
+    <section class="secao">
+      <div class="topo">
+        <div>
+          <h1 class="titulo">Agora</h1>
+          <div class="quando">${h(hoje.charAt(0).toUpperCase() + hoje.slice(1))}</div>
+        </div>
+        <div class="ferramentas">
+          <span class="periodo" id="periodo" role="group" aria-label="Período">
+            <button type="button" data-dias="7">7 dias</button>
+            <button type="button" data-dias="30">30 dias</button>
+            <button type="button" data-dias="0">Tudo</button>
+          </span>
+          <button class="btn" id="atualizar">Atualizar</button>
+        </div>
+      </div>
+      ${alertas ? `<div class="alertas">${alertas}</div>` : ""}
+      <div class="fila-cab">
+        <h2>${espera.length ? `${espera.length} ${espera.length === 1 ? "pessoa esperando" : "pessoas esperando"} você` : "Ninguém esperando você"}</h2>
+        ${espera.length ? `<span class="partes">${fones ? `<b>${fones}</b> para ligar` : ""}${fones && responder ? ", " : ""}${responder ? `<b>${responder}</b> para responder` : ""}. A mais antiga primeiro.</span>` : ""}
+      </div>
+      ${espera.length
+        ? `<div class="pessoas">${pessoas}</div>`
+        : `<div class="vazio-fila"><b>Fila limpa.</b>Quando um comprador deixar telefone ou a IA passar uma conversa para você, ela aparece aqui, com o relógio correndo.</div>`}
+    </section>
+
+    <section class="secao">
+      <div class="fila-cab"><h2>Máquinas</h2><span class="partes">${ativas.length} ${ativas.length === 1 ? "conta ligada" : "contas ligadas"}. Placar e padrões em <button class="como-link" data-ir="analise">Análise</button>.</span></div>
+      <div class="cards-maq">${cards}</div>
+    </section>`;
+
+  for (const b of $("periodo").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.dias === dias));
+  pintarRail(maquinas, esperaPorPerfil, d.semSinalMin, espera.length);
+}
+
+/* -------------------------------------------------------------- placar --- */
+
+/* Uma métrica por vez, com o campeão marcado. Dez colunas de números miúdos
+   é o que o painel fazia antes: ninguém lia, e não mudava decisão nenhuma.
+   A tabela inteira continua a um clique, para quem quiser conferir. */
+const METRICAS = [
+  { k:"taxa_telefone", r:"Taxa de telefone", melhor:"maior", sufixo:"%", dica:"de cada 100 conversas, quantas viram telefone" },
+  { k:"conversas_por_listing", r:"Conversa por anúncio", melhor:"maior", sufixo:"", dica:"quanta conversa cada anúncio publicado puxa" },
+  { k:"resposta_minutos", r:"Tempo de resposta", melhor:"menor", sufixo:" min", dica:"mediana entre a pergunta do comprador e a resposta" },
+  { k:"listings_recusados", r:"Anúncios recusados", melhor:"menor", sufixo:"", dica:"anúncio barrado pelo Facebook nesta conta" },
+  { k:"telefones", r:"Telefones captados", melhor:"maior", sufixo:"", dica:"conversas que viraram telefone no período" },
+];
+const COLUNAS = [
+  { k:"listings_publicados", r:"Publicados" }, { k:"listings_recusados", r:"Recusados" },
+  { k:"conversas", r:"Conversas" }, { k:"conversas_por_listing", r:"Conv/anúncio" },
+  { k:"telefones", r:"Telefones" }, { k:"taxa_telefone", r:"Taxa", sufixo:"%" },
+  { k:"mensagens_ia_ate_telefone", r:"Msgs/telefone" }, { k:"resposta_minutos", r:"Resposta", sufixo:" min" },
+  { k:"vendidos", r:"Vendidos" }, { k:"checkpoints", r:"Checkpoints" },
+];
+
+function veredito(linhas) {
+  const comAmostra = linhas.filter((d) => n(d.conversas) >= MIN_AMOSTRA && n(d.taxa_telefone) !== null);
+  const total = linhas.reduce((s, d) => s + n(d.conversas), 0);
+  if (!total) return `Nenhuma conversa no período. Quando os compradores começarem a escrever, a comparação aparece aqui.`;
+  if (comAmostra.length < 2) {
+    const falta = linhas.filter((d) => n(d.conversas) > 0 && n(d.conversas) < MIN_AMOSTRA).length;
+    return `${total} ${total === 1 ? "conversa" : "conversas"} no período${falta ? `, e ${falta === 1 ? "1 perfil ainda tem" : falta + " perfis ainda têm"} menos de ${MIN_AMOSTRA}` : ""}. Comparar com amostra pequena engana mais do que ajuda, então ainda não elejo campeão.`;
+  }
+  const ordem = [...comAmostra].sort((a, b) => n(b.taxa_telefone) - n(a.taxa_telefone));
+  const topo = ordem[0], base = ordem[ordem.length - 1];
+  const media = ordem.slice(1).reduce((s, d) => s + n(d.taxa_telefone), 0) / (ordem.length - 1);
+  if (n(topo.taxa_telefone) - media < 5) {
+    return `Empate técnico na captação: <b>${h(nomeCurto(topo))}</b> em ${n(topo.taxa_telefone)}% e o resto em ${media.toFixed(1)}% na média. Nada a copiar de um para o outro por enquanto.`;
+  }
+  return `<b>${h(nomeCurto(topo))} está captando melhor.</b> ${n(topo.taxa_telefone)}% das conversas viram telefone, contra ${media.toFixed(1)}% no resto${base !== topo ? ` e ${n(base.taxa_telefone)}% em ${h(nomeCurto(base))}` : ""}. Abra essa máquina, veja a abertura que ela usa e o carro que puxa conversa, e replique nas outras.`;
+}
+
+function pintarPlacar(d) {
+  // Vaga que nunca ligou nao entra na comparacao: so ocupava tres linhas de "—".
+  const vagas = new Set((d.maquinas || []).filter(ehVaga).map((m) => m.perfil_id));
+  const linhas = (d.desempenho || []).filter((l) => !vagas.has(l.perfil_id));
+  const alvo = $("secaoPlacar");
+  if (!alvo) return;
+  if (!linhas.length) { alvo.innerHTML = ""; return; }
+
+  const m = METRICAS.find((x) => x.k === metrica) || METRICAS[0];
+  const valores = linhas.map((l) => ({ l, v: n(l[m.k]), amostra: n(l.conversas) >= MIN_AMOSTRA }));
+  const comValor = valores.filter((x) => x.v !== null);
+  const max = Math.max(1, ...comValor.map((x) => Math.abs(x.v)));
+  const elegiveis = comValor.filter((x) => x.amostra || m.k === "listings_recusados");
+  const alvoLider = elegiveis.length > 1
+    ? (m.melhor === "maior" ? Math.max(...elegiveis.map((x) => x.v)) : Math.min(...elegiveis.map((x) => x.v)))
+    : null;
+
+  const ordenado = [...valores].sort((a, b) => {
+    if (a.v === null) return 1;
+    if (b.v === null) return -1;
+    return m.melhor === "maior" ? b.v - a.v : a.v - b.v;
+  });
+
+  const barras = ordenado.map(({ l, v, amostra }) => {
+    const lider = v !== null && v === alvoLider && (amostra || m.k === "listings_recusados") && elegiveis.length > 1;
+    return `<div class="barra-linha ${lider ? "lider" : ""} ${v === null ? "sem" : ""}">
+      <span class="r"><span>${h(nomeCurto(l))}</span><small>${amostra ? "conta Fastline" : `amostra pequena (${n(l.conversas)} conversas)`}</small></span>
+      <i style="--w:${v === null ? 0 : Math.max(2, (Math.abs(v) / max) * 100)}%"></i>
+      <span class="v">${v === null ? "—" : h(v) + h(m.sufixo)}</span>
+    </div>`;
+  }).join("");
+
+  const cabecalho = COLUNAS.map((c) => `<th class="n">${h(c.r)}</th>`).join("");
+  const corpo = linhas.map((l) => `<tr>
+      <td class="forte">${h(nomeDe(l))}<small>${h(LOJA[l.dealer] || l.dealer)}</small></td>
+      ${COLUNAS.map((c) => {
+        const v = n(l[c.k]);
+        return v === null ? `<td class="n sem">—</td>` : `<td class="n">${h(v)}${h(c.sufixo || "")}</td>`;
+      }).join("")}
+    </tr>`).join("");
+
+  alvo.innerHTML = `
+    <p class="sub" style="margin:16px 0 0">${h(m.dica)}. ${m.melhor === "maior" ? "Maior é melhor." : "Menor é melhor."}</p>
+    <div class="placar">
+      <div class="metricas" id="metricas">
+        ${METRICAS.map((x) => `<button type="button" data-metrica="${x.k}" aria-pressed="${x.k === m.k}">${h(x.r)}</button>`).join("")}
+      </div>
+      ${barras}
+      <p class="veredito">${veredito(linhas)}</p>
+      <details class="tabela">
+        <summary>Ver todos os números</summary>
+        <div class="rolagem"><table><thead><tr><th>Máquina</th>${cabecalho}</tr></thead><tbody>${corpo}</tbody></table></div>
+      </details>
+    </div>`;
+}
+
+/* -------------------------------------------------------------- blocos --- */
+
+function somar(linhas, chave) {
+  const porNome = new Map();
+  for (const l of linhas) {
+    const atual = porNome.get(l[chave]) || { [chave]: l[chave], conversas: 0, telefones: 0 };
+    atual.conversas += Number(l.conversas || 0);
+    atual.telefones += Number(l.telefones || 0);
+    porNome.set(l[chave], atual);
+  }
+  return [...porNome.values()].sort((a, b) => b.telefones - a.telefones || b.conversas - a.conversas);
+}
+function barras(itens, campo, valor, classe) {
+  const max = Math.max(1, ...itens.map((i) => Number(i[valor])));
+  return itens.map((i) => {
+    const v = Number(i[valor]);
+    return `<div class="barra ${classe}"><span class="txt" title="${h(i[campo])}">${h(i[campo])}</span><b>${v}${classe === "taxa" ? "%" : ""}</b><i style="--w:${Math.max(v ? 2 : 0, (v / max) * 100)}%"></i></div>`;
+  }).join("");
+}
+const vazio = (titulo, texto) => `<div class="vazio"><b>${h(titulo)}</b>${h(texto)}</div>`;
+
+function blocoCarros(carros, eTodas) {
+  if (!carros.length) return vazio("Nenhuma conversa ainda.", "Quando um comprador escrever a partir de um anúncio, o carro dele aparece aqui.");
+  return `<div class="bloco"><h3>Carros que puxam conversa</h3><p class="d">${eTodas ? "Somando as cinco máquinas." : "Só nesta máquina."} A barra verde é telefone captado.</p>
+    ${barras(carros, "carro", "conversas", "")}
+    <p class="d" style="margin:16px 0 6px">Telefones</p>
+    ${barras([...carros].sort((a, b) => b.telefones - a.telefones), "carro", "telefones", "fone")}</div>`;
+}
+function blocoAberturas(lista) {
+  const ab = [...lista].sort((a, b) => Number(b.taxa) - Number(a.taxa) || Number(b.conversas) - Number(a.conversas));
+  if (!ab.length) return vazio("Nenhuma abertura ainda.", "A IA precisa responder pelo menos uma conversa para haver script a medir.");
+  return `<div class="bloco"><h3>A abertura que converte</h3><p class="d">A primeira fala da IA em cada conversa, agrupada, com a taxa de telefone de cada uma. É assim que se descobre o script campeão.</p>
+    ${barras(ab.slice(0, 8), "abertura", "taxa", "taxa")}
+    <p class="nota">${ab.length} ${ab.length === 1 ? "abertura" : "aberturas"} diferentes no período. O app varia o texto de propósito.</p></div>`;
+}
+function blocoPerguntas(perguntas) {
+  if (!perguntas.length) return vazio("Nenhuma pergunta ainda.", "Assim que os compradores escreverem, o assunto de cada conversa é classificado aqui.");
+  const com = perguntas.map((p) => ({ ...p, rotulo: ASSUNTOS[p.assunto] || p.assunto,
+    taxa: p.taxa == null ? (p.conversas ? Math.round((1000 * p.telefones) / p.conversas) / 10 : 0) : Number(p.taxa) }));
+  return `<div class="bloco"><h3>O que o comprador pergunta</h3><p class="d">Assunto por conversa, em português, inglês e espanhol.</p>
+    ${barras(com, "rotulo", "conversas", "")}
+    <p class="d" style="margin:16px 0 6px">Vira telefone</p>
+    ${barras([...com].sort((a, b) => b.taxa - a.taxa), "rotulo", "taxa", "taxa")}</div>`;
+}
+function blocoHoras(horas) {
+  if (!horas || !horas.length) return "";
+  const porHora = new Map(horas.map((x) => [Number(x.hora), Number(x.conversas)]));
+  const max = Math.max(1, ...porHora.values());
+  const pico = [...porHora.entries()].sort((a, b) => b[1] - a[1])[0];
+  const cols = Array.from({ length: 24 }, (_, i) => {
+    const v = porHora.get(i) || 0;
+    return `<i class="${pico && i === pico[0] ? "pico" : ""}" style="height:${Math.max(v ? 6 : 2, (v / max) * 100)}%" title="${i}h · ${v} conversas"></i>`;
+  }).join("");
+  return `<div class="bloco"><h3>A que horas o comprador escreve</h3>
+    <p class="d">Hora de Orlando.${pico ? ` O pico é às <b>${pico[0]}h</b>, com ${pico[1]} conversas no período.` : ""}</p>
+    <div class="horas">${cols}</div>
+    <div class="horas-eixo"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div></div>`;
+}
+
+function pintarGeral(d) {
+  const alvo = $("secaoGeral");
+  if (!alvo) return;
+  const carros = (d.carros || []).map((c) => ({ ...c, conversas: Number(c.conversas), telefones: Number(c.telefones) }));
+  const ab = somar(d.aberturas || [], "abertura").map((a) => ({ ...a, taxa: a.conversas ? Math.round((1000 * a.telefones) / a.conversas) / 10 : 0 }));
+  alvo.innerHTML = `<div class="olho">Padrões</div>
+    <h2 class="titulo">O que funciona, somando tudo</h2>
+    <div class="grade">${blocoCarros(carros, true)}${blocoAberturas(ab)}${blocoPerguntas(somar(d.perguntas || [], "assunto"))}</div>`;
+}
+
+/* ------------------------------------------------------------- análise --- */
+
+/* O placar e os padrões viviam no fim da home, onde ele passava rolando, e os
+   padrões apareciam DUAS vezes com o mesmo título e recortes diferentes (aqui
+   somando as cinco, lá dentro de uma). Agora é uma tela só, com o escopo
+   escolhido em cima: todas as máquinas, ou uma. */
+function pintarAnalise(d) {
+  const alvo = $("analise");
+  if (!d) { alvo.innerHTML = `<div class="carregando">lendo…</div>`; return; }
+
+  const maquinas = d.maquinas || [];
+  const escopo = escopoAnalise && maquinas.some((m) => m.perfil_id === escopoAnalise) ? escopoAnalise : null;
+  const chips = [
+    `<button type="button" data-escopo="" aria-pressed="${!escopo}">Todas as máquinas</button>`,
+    ...maquinas.filter((m) => !ehVaga(m)).map((m) => `<button type="button" data-escopo="${h(m.perfil_id)}" aria-pressed="${escopo === m.perfil_id}">${h(nomeCurto(m))}</button>`),
+  ].join("");
+
+  const naMaquina = Boolean(escopo);
+  const carros = naMaquina
+    ? (d.carrosPerfil || []).filter((c) => c.perfil_id === escopo).map((c) => ({ ...c, conversas: Number(c.conversas), telefones: Number(c.telefones) }))
+    : (d.carros || []).map((c) => ({ ...c, conversas: Number(c.conversas), telefones: Number(c.telefones) }));
+  const ab = naMaquina
+    ? (d.aberturas || []).filter((a) => a.perfil_id === escopo).map((a) => ({ ...a, taxa: Number(a.taxa || 0) }))
+    : somar(d.aberturas || [], "abertura").map((a) => ({ ...a, taxa: a.conversas ? Math.round((1000 * a.telefones) / a.conversas) / 10 : 0 }));
+  const perg = naMaquina
+    ? (d.perguntas || []).filter((p) => p.perfil_id === escopo)
+    : somar(d.perguntas || [], "assunto");
+
+  const linha = (d.desempenho || []).find((x) => x.perfil_id === escopo);
+
+  alvo.innerHTML = `
+    <section class="secao">
+      <div class="fila-topo">
+        <div>
+          <div class="olho">No período</div>
+          <h1 class="titulo">${naMaquina ? h(nomeDe(linha || { perfil_id: escopo })) : "Qual conta está indo melhor"}</h1>
+          <p class="sub">${naMaquina
+            ? "Os padrões desta máquina. Troque o escopo acima para comparar com as outras."
+            : "As contas lado a lado, uma métrica por vez. O campeão é quem você copia."}</p>
+        </div>
+        <div class="direita">
+          <span class="periodo" role="group" aria-label="Período">
+            <button type="button" data-dias="7">7 dias</button>
+            <button type="button" data-dias="30">30 dias</button>
+            <button type="button" data-dias="0">Tudo</button>
+          </span>
+        </div>
+      </div>
+      <div class="metricas escopos">${chips}</div>
+      ${naMaquina ? "" : `<div id="secaoPlacar"></div>`}
+      <div class="grade" style="margin-top:22px">
+        ${naMaquina && linha ? funil(linha) : ""}
+        ${blocoCarros(carros, !naMaquina)}
+        ${blocoAberturas(ab)}
+        ${blocoPerguntas(perg)}
+        ${naMaquina ? "" : blocoHoras(d.horas)}
+      </div>
+    </section>`;
+
+  for (const b of alvo.querySelectorAll("[data-dias]")) b.setAttribute("aria-pressed", String(b.dataset.dias === dias));
+  if (!naMaquina) pintarPlacar(d);
+}
+
+/* --------------------------------------------------- dentro da máquina --- */
+
+function contra(valor, media, melhor) {
+  if (valor === null || media === null || !media) return { texto:"", classe:"" };
+  const dif = Math.round((valor - media) * 10) / 10;
+  if (Math.abs(dif) < 0.05) return { texto:"igual à média das outras", classe:"" };
+  const bom = melhor === "maior" ? dif > 0 : dif < 0;
+  return { texto:`${dif > 0 ? "+" : ""}${dif} contra a média das outras`, classe: bom ? "bom" : "ruim" };
+}
+const instrumento = (k, v, p, unidade = "", classe = "") =>
+  `<div><small>${h(k)}</small><b class="${v === null ? "vazio" : ""}">${v === null ? "—" : h(v)}${unidade ? `<em>${h(unidade)}</em>` : ""}</b><p class="${classe}">${h(p)}</p></div>`;
+
+function funil(d) {
+  const conversas = n(d.conversas) || 0;
+  if (!conversas) return vazio("Sem conversa no período.", "O funil aparece quando o primeiro comprador escrever.");
+  const degraus = [
+    ["Conversas", conversas], ["Telefone captado", n(d.telefones) || 0], ["Contatado", n(d.contatados) || 0],
+    ["Visita marcada", n(d.visitas) || 0], ["Negociando", n(d.negociando) || 0],
+    ["Vendido", n(d.vendidos) || 0], ["Perdido", n(d.perdidos) || 0],
+  ];
+  return `<div class="bloco"><h3>Do "oi" até a venda</h3><p class="d">Cada degrau é a porcentagem das conversas do período.</p>
+    ${degraus.map(([r, v]) => `<div class="barra-linha">
+      <span class="r"><span>${h(r)}</span></span>
+      <i style="--w:${Math.max(v ? 1.5 : 0, (v / conversas) * 100)}%"></i>
+      <span class="v">${v}<small>${Math.round((1000 * v) / conversas) / 10}%</small></span></div>`).join("")}
+    ${n(d.para_ligar) ? `<p class="nota"><b>${n(d.para_ligar)}</b> ${n(d.para_ligar) === 1 ? "telefone esperando ligação" : "telefones esperando ligação"} nesta máquina.</p>` : ""}</div>`;
+}
+
+function fichaDaConversa(c) {
+  const marcas = [];
+  if (c.telefone) marcas.push(`<span class="pilula ok">${h(c.telefone)}</span>`);
+  if (c.estagio) marcas.push(`<span class="pilula">${h(ESTAGIOS[c.estagio] || c.estagio)}</span>`);
+  if (c.situacao === "vendedor") marcas.push(`<span class="pilula atencao">${c.telefone ? "Com o vendedor" : "Escalada"}</span>`);
+  if (c.situacao === "rascunho") marcas.push(`<span class="pilula atencao">Rascunho no app</span>`);
+  const q = c.qualificacao || {};
+  for (const [campo, rotulo] of [["carro","Carro"],["pagamento","Pagamento"],["troca","Troca"],["entrada","Entrada"],["prazo","Prazo"],["melhorHorario","Melhor horário"],["observacoes","Obs."],["idioma","Idioma"]]) {
+    if (q[campo]) marcas.push(`<span class="pilula">${h(rotulo)}: ${h(String(q[campo]).slice(0, 24))}</span>`);
+  }
+  return marcas.join("");
+}
+
+/* O papo só mostra o que FOI dito ao comprador: rascunho que a IA deixou
+   pronto e ninguém mandou vive no app, na máquina. */
+function pintarPapo() {
+  const alvo = document.querySelector("#papo .rolo");
+  if (!alvo) return;
+  const perfilNome = nomeDoPerfil();
+  const msgs = (falas.get(threadAberta) || [])
+    .filter((m) => m.enviada !== false && !eCarimbo(m.texto, perfilNome));
+  if (!falas.has(threadAberta)) { alvo.innerHTML = `<div class="carregando">abrindo…</div>`; return; }
+  if (!msgs.length) { alvo.innerHTML = `<div class="carregando">nenhuma mensagem guardada</div>`; return; }
+  let dia = "";
+  alvo.innerHTML = msgs.map((m) => {
+    const q = new Date(m.quando);
+    const d = q.toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" });
+    const sep = d !== dia ? `<div class="dia"><span>${h(d)}</span></div>` : "";
+    dia = d;
+    const daIA = m.papel === "ia";
+    const meu = m.papel !== "comprador";
+    const quem = m.papel === "comprador" ? "Comprador" : daIA ? `${ROBO}IA` : "Vendedor";
+    // Hora exata so quando veio do envio ou da caixa em JSON do Facebook; o
+    // resto e o carimbo do grupo da tela, e o til diz isso sem esconder o numero.
+    const exata = m.origem_hora === "envio" || m.origem_hora === "facebook";
+    const hora = h(q.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" }));
+    return `${sep}<div class="balao ${meu ? "nossa" : "comprador"}${daIA ? " daIA" : ""}"><span class="meta">${quem} · ${exata ? hora : `<span class="aprox" title="Hora aproximada: o Facebook mostra a hora do grupo de mensagens, não de cada uma.">~${hora}</span>`}</span>${h(m.texto)}</div>`;
+  }).join("");
+  alvo.scrollTop = alvo.scrollHeight;
+}
+
+async function abrirPapo(thread) {
+  if (falas.has(thread)) return pintarPapo();
+  pintarPapo();
+  try {
+    const d = await lerPainel({ perfil: aberta, thread });
+    if (d.senhaErrada) return pedirSenha("Senha incorreta.");
+    falas.set(thread, d.mensagens || []);
+  } catch (erro) { falas.set(thread, []); console.error(erro); }
+  pintarPapo();
+}
+
+/* A mesma regua do app (src/ui/index.html, precisaDeResposta / comOVendedor).
+   Telefone captado e ainda em "Para ligar" espera LIGACAO. Conversa escalada
+   SEM telefone espera resposta. Escalada COM telefone ja e do vendedor: o que
+   falta e a ligacao, e ela se acompanha pelo estagio, nao aqui - marcar isso
+   de vermelho fazia o alarme mentir todo dia. */
+const comOVendedor = (c) => c.situacao === "vendedor" && Boolean(c.telefone);
+const emEspera = (c) =>
+  (Boolean(c.telefone) && (c.estagio ?? "para-ligar") === "para-ligar")
+  || (!c.telefone && (c.situacao === "vendedor" || c.situacao === "rascunho"));
+
+/* "O que entrou hoje?" e a pergunta mais feita, e ate agora nao tinha
+   resposta: o periodo la em cima comeca em 7 dias. Conta pela hora da ultima
+   fala, no fuso de quem esta olhando a tela - dia e o dia dele, nao o do
+   servidor. */
+const falouNoDia = (c, diasAtras) => {
+  const iso = c.ultima_em || c.atualizada_em;
+  if (!iso) return false;
+  const alvo = new Date();
+  alvo.setDate(alvo.getDate() - diasAtras);
+  return new Date(iso).toDateString() === alvo.toDateString();
+};
+
+function inbox(d) {
+  const todas = d.conversas || [];
+  const busca = buscaConversa.trim().toLowerCase();
+  // Buscar procura em TODAS as conversas: quem digita um nome quer aquela
+  // pessoa, nao "aquela pessoa se ela couber no filtro que esta ligado".
+  const filtradas = todas.filter((c) => {
+    if (busca) return [c.comprador, c.carro, c.ultima_fala, c.telefone].some((x) => String(x || "").toLowerCase().includes(busca));
+    if (filtroConversa === "espera" && !emEspera(c)) return false;
+    if (filtroConversa === "telefone" && !c.telefone) return false;
+    if (filtroConversa === "hoje" && !falouNoDia(c, 0)) return false;
+    if (filtroConversa === "ontem" && !falouNoDia(c, 1)) return false;
+    return true;
+  });
+  if (threadAberta && !filtradas.some((c) => c.thread_id === threadAberta) && todas.some((c) => c.thread_id === threadAberta)) {
+    filtradas.unshift(todas.find((c) => c.thread_id === threadAberta));
+  }
+
+  const esperando = todas.filter(emEspera).length;
+  const deHoje = todas.filter((c) => falouNoDia(c, 0)).length;
+  const deOntem = todas.filter((c) => falouNoDia(c, 1)).length;
+  /* Hoje e Ontem so aparecem quando ha o que ver: dia sem movimento vira
+     chip zerado, e chip zerado e ruido que o olho aprende a pular. */
+  const chips = [
+    ["espera", "Esperando", esperando, true],
+    ["hoje", "Hoje", deHoje, deHoje > 0],
+    ["ontem", "Ontem", deOntem, deOntem > 0],
+    ["todas", "Todas", todas.length, true],
+    ["telefone", "Com telefone", todas.filter((c) => c.telefone).length, true],
+  ].filter(([k, , , mostra]) => mostra || filtroConversa === k)
+   .map(([k, r, q]) => `<button type="button" data-filtro="${k}" aria-pressed="${filtroConversa === k}">${r}<span class="c">${q}</span></button>`).join("");
+
+  const linhas = filtradas.length ? filtradas.map((c) => {
+    // Com o lead na mao do vendedor, a ultima palavra dele nao e pendencia de resposta.
+    const dele = c.ultimo_papel === "comprador" && !comOVendedor(c);
+    const bola = comOVendedor(c) ? "com o vendedor" : dele ? "esperando você" : c.ultimo_papel === "ia" ? "a IA respondeu" : c.ultimo_papel === "comprador" ? "esperando você" : "você respondeu";
+    const i = idade(c.ultima_em || c.atualizada_em);
+    return `<button class="conv" data-thread="${h(c.thread_id)}" aria-current="${threadAberta === c.thread_id}">
+      <span class="ava" style="background:${corDoNome(c.comprador)}">${c.avatar && /^data:image\//.test(c.avatar) ? `<img src="${h(c.avatar)}" alt="">` : h(inicial(c.comprador))}</span>
+      <span class="t">
+        <span class="l1"><span class="quem">${h(c.comprador || "Comprador sem nome")}</span><span class="idade ${i.classe}">${h(i.texto)}</span></span>
+        <span class="carro">${h(c.carro || "carro não identificado")}</span>
+        <span class="rodape">
+          ${c.telefone ? `<span class="marca-motivo telefone">${h(c.telefone)}</span>` : ""}
+          <span class="bola ${dele ? "dele" : ""}">${bola}</span>
+        </span>
+      </span>
+    </button>`;
+  }).join("") : `<div class="vazio" style="padding:26px 16px"><b>Nada neste filtro.</b>Troque o filtro ou o período.</div>`;
+
+  const c = todas.find((x) => x.thread_id === threadAberta);
+  const papo = c
+    ? `<div class="papo" id="papo">
+        <div class="cab">
+          <button class="btn voltar-conv" data-voltar-conv>‹ conversas</button>
+          <span><span class="quem">${h(c.comprador || "Comprador sem nome")}</span><br><span class="carro">${h(c.carro || "carro não identificado")}</span></span>
+          <span class="direita">${idadeHtml(c.ultima_em || c.atualizada_em)}</span>
+        </div>
+        <div class="rolo"><div class="carregando">abrindo…</div></div>
+        ${fichaDaConversa(c) ? `<div class="ficha">${fichaDaConversa(c)}</div>` : ""}
+      </div>`
+    : `<div class="papo" id="papo"><div class="vazio" style="padding:60px 24px; text-align:center"><b>Escolha uma conversa.</b>O papo inteiro aparece aqui, do primeiro "oi" até a última fala.</div></div>`;
+
+  return `<div class="inbox ${threadAberta ? "lendo" : ""}">
+    <div class="coluna">
+      <div class="filtros">${chips}</div>
+      <div class="busca"><input id="buscaConversa" type="search" placeholder="Buscar comprador, carro ou texto" value="${h(buscaConversa)}"></div>
+      <div class="conversas">${linhas}</div>
+    </div>
+    ${papo}
+  </div>`;
+}
+
+function tabelaListings(d) {
+  const linhas = d.listings || [];
+  if (!linhas.length) return vazio("Nenhum anúncio no período.", "Quando esta máquina publicar um carro, ele aparece aqui com o que rendeu.");
+  const corpo = linhas.map((l) => {
+    const s = SITUACAO_ANUNCIO[l.situacao] || { rotulo: l.situacao || "—", classe: "" };
+    return `<tr>
+      <td class="forte">${h(l.titulo || l.vin)}<small>${h(l.vin)}${l.url ? ` · <a href="${h(l.url)}" target="_blank" rel="noopener">abrir no Facebook</a>` : ""}</small></td>
+      <td class="n">${h(dinheiro(l.preco))}</td>
+      <td><span class="pilula ${s.classe}">${h(s.rotulo)}</span></td>
+      <td class="n">${h(dataCurta(l.publicado_em))}${Number(l.renovacoes) ? `<small class="renov" title="Renovado pelo botão do Facebook: volta ao topo do feed sem perder as vistas">renovado ${Number(l.renovacoes)}× · ${h(dataCurta(l.renovado_em))}</small>` : ""}</td>
+      <td class="n">${l.visualizacoes == null ? `<span class="sem">—</span>` : h(l.visualizacoes)}</td>
+      <td class="n">${Number(l.conversas) || `<span class="sem">0</span>`}</td>
+      <td class="n">${Number(l.telefones) ? `<span class="lider-n">${h(l.telefones)}</span>` : `<span class="sem">0</span>`}</td>
+    </tr>`;
+  }).join("");
+  const cegos = linhas.filter((l) => (l.visualizacoes ?? 0) > 20 && !Number(l.conversas)).length;
+  return `<div class="rolagem" style="margin-top:20px"><table><thead><tr>
+      <th>Carro</th><th class="n">Preço</th><th>Situação</th><th class="n">Publicado</th>
+      <th class="n">Vistas</th><th class="n">Conversas</th><th class="n">Telefones</th>
+    </tr></thead><tbody>${corpo}</tbody></table></div>
+    <p class="nota">${cegos
+      ? `${cegos} ${cegos === 1 ? "anúncio foi visto" : "anúncios foram vistos"} mais de 20 vezes e ninguém escreveu: aí o problema é foto ou preço, não alcance.`
+      : "Vistas é o número do próprio Facebook, dos últimos 14 dias. Traço quer dizer que ele não mostrou o número naquela volta."}</p>`;
+}
+
+function listaEventos(d) {
+  const linhas = d.eventos || [];
+  if (!linhas.length) return vazio("Sem atividade no período.", "Cada volta do robô deixa registro aqui: o que publicou, o que respondeu, onde travou.");
+  const TIPO = { erro:"ruim", checkpoint:"ruim", aviso:"atencao" };
+  let dia = "";
+  const corpo = linhas.map((e) => {
+    const d1 = new Date(e.quando).toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" });
+    const sep = d1 !== dia ? `<div class="dia-sep">${h(d1)}</div>` : "";
+    dia = d1;
+    return `${sep}<li>
+      <span class="q">${h(relogio(e.quando))}</span>
+      <span><span class="pilula ${TIPO[e.tipo] || ""}">${h(e.tipo)}</span></span>
+      <span class="txt">${h(e.texto)}${e.detalhe ? `<span class="det">${h(e.detalhe)}</span>` : ""}</span>
+    </li>`;
+  }).join("");
+  return `<ul class="diario">${corpo}</ul>`;
+}
+
+/* A sentinela do historico desta maquina, em uma linha: quantas horas sao
+   exatas, quantas aproximadas, e quantas conversas estao inteiras desde o
+   comeco. "quebrado" e alarme: alguma conversa PERDEU mensagem. */
+function historicoHtml(hist) {
+  if (!hist || typeof hist !== "object") return "";
+  const cob = hist.cobertura;
+  const total = cob ? Number(cob.inteiras || 0) + Number(cob.comRessalva || 0) + Number(cob.semComeco || 0) : 0;
+  const numeros = cob
+    ? `hora exata em ${Number(cob.exatas || 0)}, aproximada em ${Number(cob.aproximadas || 0)} · ${Number(cob.inteiras || 0)} de ${total} conversas inteiras`
+    : "";
+  const texto = hist.nivel === "quebrado" ? (hist.texto || "Uma conversa perdeu mensagens") : numeros || hist.texto || "";
+  if (!texto) return "";
+  return `<p class="historico ${hist.nivel === "quebrado" ? "ruim" : ""}" title="${h(hist.texto || "")}">Histórico: ${h(texto)}</p>`;
+}
+
+function pintarMaquina() {
+  const alvo = $("maquina");
+  const foco = document.activeElement;
+  const cursor = foco && foco.id === "buscaConversa" ? foco.selectionStart : null;
+
+  const base = (ultimo?.maquinas || []).find((m) => m.perfil_id === aberta);
+  const nome = base ? nomeCurto(base) : aberta;
+
+  if (!detalhe || detalhe.perfil !== aberta) {
+    alvo.innerHTML = `<div class="capa"><div><button class="voltar" data-perfil="">‹ todas as máquinas</button><h1 class="titulo">${h(nome)}</h1></div></div><div class="carregando">abrindo a máquina…</div>`;
+    return;
+  }
+
+  const d = detalhe.desempenho || {};
+  const comp = detalhe.comparacao || {};
+  const semSinal = ultimo?.semSinalMin ?? 12;
+  const est = base ? estadoDe(base, new Date(ultimo.agora).getTime(), semSinal) : { estado:"nunca", quieto:null };
+  const s = silencio(est.quieto, semSinal);
+  const vistas = (detalhe.listings || []).reduce((x, l) => x + (Number(l.visualizacoes) || 0), 0);
+  const cTaxa = contra(n(d.taxa_telefone), comp.taxa_telefone, "maior");
+  const cResp = contra(n(d.resposta_minutos), comp.resposta_minutos, "menor");
+
+  const contas = {
+    inbox:(detalhe.conversas || []).length,
+    anuncios:(detalhe.listings || []).length,
+    atividade:(detalhe.eventos || []).length,
+  };
+  const abas = [
+    ["inbox", "Caixa de entrada", contas.inbox],
+    ["anuncios", "Anúncios", contas.anuncios],
+    ["atividade", "Atividade", contas.atividade],
+  ].map(([k, r, q]) => `<button class="aba" type="button" role="tab" data-aba="${k}" aria-selected="${abaDetalhe === k}">${r}${q === null ? "" : `<span class="c">${q}</span>`}</button>`).join("");
+
+  let conteudo = "";
+  if (abaDetalhe === "anuncios") conteudo = tabelaListings(detalhe);
+  else if (abaDetalhe === "atividade") conteudo = listaEventos(detalhe);
+  else conteudo = inbox(detalhe);
+
+  /* Funil e dia a dia sao leitura de operacao, nao padrao: ficam em cima,
+     junto dos instrumentos, e nao escondidos numa aba. Os padroes desta
+     maquina moram na tela de Analise, um lugar so para os dois recortes. */
+  const leitura = `<div class="grade" style="margin-top:20px">
+    ${funil(d)}
+    <div class="bloco"><h3>Dia a dia</h3><p class="d">Barra cinza é conversa que chegou; a parte verde é telefone captado no mesmo dia.</p>${traco(serieDe(detalhe.serie, dias === "7" ? 7 : 30), true)}</div>
+  </div>
+  <p class="nota">Os carros, as aberturas e as perguntas desta máquina estão em <button class="como-link" data-ir="analise" data-escopo="${h(aberta)}">Análise</button>.</p>`;
+
+  alvo.innerHTML = `
+    <div class="capa">
+      <div>
+        <button class="voltar" data-perfil="">‹ todas as máquinas</button>
+        <div class="olho">${h(LOJA[base?.dealer] || base?.dealer || "")}${base?.detalhe?.nomeNoFacebook ? " · " + h(base.detalhe.nomeNoFacebook) : ""}</div>
+        <h1 class="titulo">${h(nome)}</h1>
+        <p class="sub">${h(base ? oQueFaz(base, est.estado) : "")}${base?.versao ? ` · versão ${h(base.versao)}` : ""}</p>
+        ${historicoHtml(base?.detalhe?.historico)}
+      </div>
+      <div class="direita">
+        <span class="pilula ${ESTADOS[est.estado].classe}">${h(ESTADOS[est.estado].rotulo)}</span>
+        <span class="idade ${s.classe}">${h(s.texto)}</span>
+      </div>
+    </div>
+
+    <div class="instrumentos">
+      ${instrumento("Conversas", n(d.conversas), `${n(d.msgs_comprador) || 0} mensagens de comprador`)}
+      ${instrumento("Telefones", n(d.telefones), cTaxa.texto || (n(d.taxa_telefone) === null ? "sem conversa ainda" : `${n(d.taxa_telefone)}% das conversas`), "", cTaxa.classe)}
+      ${instrumento("Resposta", n(d.resposta_minutos), cResp.texto || "mediana da pergunta à resposta", "min", cResp.classe)}
+      ${instrumento("Anúncios", n(d.listings_publicados), `${n(d.listings_no_ar) || 0} no ar · ${n(d.listings_recusados) || 0} recusados`)}
+      ${instrumento("Vistas", vistas || null, "vezes que abriram os anúncios")}
+    </div>
+
+    ${leitura}
+
+    <div class="abas" role="tablist">${abas}</div>
+    <div>${conteudo}</div>`;
+
+  if (threadAberta) { pintarPapo(); if (!falas.has(threadAberta)) abrirPapo(threadAberta); }
+  if (cursor !== null) {
+    const campo = $("buscaConversa");
+    if (campo) { campo.focus(); campo.setSelectionRange(cursor, cursor); }
+  }
+}
+
+/* -------------------------------------------------------------- carga --- */
+
+function avisarSql(lista) {
+  const alvo = $("avisoSql");
+  if (!lista || !lista.length) { alvo.hidden = true; return; }
+  alvo.hidden = false;
+  alvo.innerHTML = `<b>Falta rodar maquinas/sql/detalhe.sql no Supabase.</b> Sem ele, estes blocos ficam vazios: ${h([...new Set(lista.map((x) => String(x).split(":")[0]))].join(", "))}.`;
+}
+
+async function carregarLista() {
+  const d = await lerPainel({});
+  if (d.senhaErrada) return pedirSenha("Senha incorreta.");
+
+  /* Saiu versão nova enquanto esta aba estava aberta: ela só buscava dados
+     novos, com a tela velha. Recarregar é a única forma honesta. */
+  if (d.deploy) {
+    if (deployVisto && d.deploy !== deployVisto) { location.reload(); return; }
+    deployVisto = d.deploy;
+  }
+
+  ultimo = d;
+  $("entradaTela").hidden = true; $("app").hidden = false; $("erro").hidden = true;
+  pintarLista(d);
+  if (vista === "analise") pintarAnalise(d);
+  avisarSql(d.faltando);
+  $("carimbo").textContent = "lido às " + relogio(d.agora);
+  if (aberta) pintarMaquina();
+}
+
+async function carregarMaquina() {
+  if (!aberta) return;
+  ultimaMaquinaEm = Date.now();
+  const d = await lerPainel({ perfil: aberta });
+  if (d.senhaErrada) return pedirSenha("Senha incorreta.");
+  detalhe = d;
+  avisarSql([...(ultimo?.faltando || []), ...(d.faltando || [])]);
+  pintarMaquina();
+}
+
+function pedirSenha(mensagem) {
+  senha = ""; try { localStorage.removeItem(CHAVE); } catch {}
+  $("entradaTela").hidden = false; $("app").hidden = true;
+  if (mensagem) { $("erroEntrada").hidden = false; $("erroEntrada").textContent = mensagem; }
+}
+
+async function carregar(doRelogio = false) {
+  if (!senha) return pedirSenha();
+  // O relógio só trabalha para quem está olhando; clique de gente sempre lê.
+  if (doRelogio && !temGente()) return;
+  try {
+    await carregarLista();
+    // A máquina aberta é o que pesa: conversas, anúncios e diário juntos. No
+    // relógio ela se atualiza de três em três minutos; a lista, todo minuto.
+    if (aberta && (!doRelogio || Date.now() - ultimaMaquinaEm > DETALHE_MS)) await carregarMaquina();
+  } catch (erro) {
+    $("app").hidden = false;
+    $("erro").hidden = false;
+    $("erro").textContent = "Não consegui ler as máquinas: " + erro.message;
+  }
+}
+
+/* --------------------------------------------------------------- rota --- */
+
+/* O endereço guarda a máquina e a conversa abertas: dá para recarregar, usar
+   o botão de voltar do navegador e mandar o link de uma conversa. */
+function lerRota() {
+  const partes = (location.hash || "").replace(/^#\/?/, "").split("/");
+  // "analise" e uma tela, nao uma maquina: se alguem batizar uma maquina de
+  // "analise" um dia, a tela ganha - e uma so, a outra tem cinco nomes.
+  if (partes[0] === "analise") return { tela: "analise", perfil: null, thread: null };
+  const perfil = /^[a-z0-9][a-z0-9-]{0,39}$/i.test(partes[0] || "") ? partes[0] : null;
+  const thread = perfil && partes[1] ? decodeURIComponent(partes.slice(1).join("/")) : null;
+  return { tela: perfil ? "maquina" : "agora", perfil, thread };
+}
+function irPara(perfil, thread) {
+  location.hash = perfil ? `/${perfil}${thread ? "/" + encodeURIComponent(thread) : ""}` : "";
+}
+
+function aplicarRota() {
+  const rota = lerRota();
+  const { perfil, thread } = rota;
+  const trocouMaquina = perfil !== aberta;
+  aberta = perfil;
+  threadAberta = thread;
+  vista = rota.tela;
+  if (trocouMaquina) { detalhe = null; falas.clear(); abaDetalhe = "inbox"; filtroConversa = "espera"; buscaConversa = ""; }
+  $("lista").hidden = vista !== "agora";
+  $("analise").hidden = vista !== "analise";
+  $("maquina").hidden = vista !== "maquina";
+  if (ultimo) { pintarLista(ultimo); if (vista === "analise") pintarAnalise(ultimo); }
+  window.scrollTo(0, 0);
+  if (aberta) {
+    pintarMaquina();
+    // No celular a conversa fica abaixo de tudo; vir da fila e cair no topo da
+    // máquina faria o dono rolar procurando a pessoa que ele acabou de tocar.
+    if (threadAberta && window.innerWidth <= 900) {
+      requestAnimationFrame(() => document.querySelector(".inbox")?.scrollIntoView({ block: "start" }));
+    }
+    if (trocouMaquina || !detalhe) {
+      carregarMaquina().catch((e) => { $("erro").hidden = false; $("erro").textContent = "Não consegui abrir a máquina: " + e.message; });
+    } else if (threadAberta) {
+      abrirPapo(threadAberta);
+    }
+  }
+}
+
+/* ------------------------------------------------------------ eventos --- */
+
+$("formSenha").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  senha = $("senha").value.trim();
+  try { localStorage.setItem(CHAVE, senha); } catch {}
+  $("erroEntrada").hidden = true;
+  carregar();
+});
+$("sair").addEventListener("click", () => pedirSenha());
+
+/* Copiar e a acao mais usada desta tela: telefone para ligar, lead inteiro
+   para mandar ao vendedor. O botao confirma virando um "certo" verde, porque
+   copia sem retorno visivel deixa qualquer um clicando duas vezes. */
+document.addEventListener("click", async (ev) => {
+  const copiar = ev.target.closest("[data-copiar]");
+  if (!copiar) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const valor = copiar.dataset.copiar || "";
+  try { await navigator.clipboard.writeText(valor); }
+  catch {
+    const ta = document.createElement("textarea");
+    ta.value = valor; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  const antes = copiar.innerHTML;
+  copiar.classList.add("feito"); copiar.innerHTML = ICONE_OK; copiar.title = "Copiado";
+  setTimeout(() => { copiar.classList.remove("feito"); copiar.innerHTML = antes; copiar.title = copiar.dataset.titulo || ""; }, 1600);
+}, true);
+
+document.addEventListener("click", (ev) => {
+  const atualizar = ev.target.closest("#atualizar");
+  if (atualizar) return void carregar();
+
+  const per = ev.target.closest("[data-dias]");
+  if (per) {
+    dias = per.dataset.dias;
+    try { localStorage.setItem(CHAVE_DIAS, dias); } catch {}
+    falas.clear();
+    return void carregar();
+  }
+
+  const met = ev.target.closest("[data-metrica]");
+  if (met) { metrica = met.dataset.metrica; return void pintarPlacar(ultimo); }
+
+  const ir = ev.target.closest("[data-ir]");
+  if (ir) {
+    if (ir.dataset.escopo !== undefined) escopoAnalise = ir.dataset.escopo || null;
+    return void (location.hash = ir.dataset.ir === "analise" ? "/analise" : "");
+  }
+
+  const esc = ev.target.closest("[data-escopo]");
+  if (esc && !esc.dataset.ir) {
+    escopoAnalise = esc.dataset.escopo || null;
+    return void pintarAnalise(ultimo);
+  }
+
+  // Ligar e WhatsApp sao links: agem sozinhos, sem abrir a conversa junto.
+  if (ev.target.closest(".pessoa a[href]")) return;
+  // Uma linha da fila leva direto à conversa daquela pessoa, na máquina dela.
+  const linhaFila = ev.target.closest(".linha[data-thread], .pessoa[data-thread]");
+  if (linhaFila) return void irPara(linhaFila.dataset.perfil, linhaFila.dataset.thread);
+
+  const alvoPerfil = ev.target.closest("[data-perfil]");
+  if (alvoPerfil) return void irPara(alvoPerfil.dataset.perfil || null, null);
+
+  const aba = ev.target.closest("[data-aba]");
+  if (aba) { abaDetalhe = aba.dataset.aba; return void pintarMaquina(); }
+
+  const filtro = ev.target.closest("[data-filtro]");
+  if (filtro) { filtroConversa = filtro.dataset.filtro; return void pintarMaquina(); }
+
+  if (ev.target.closest("[data-voltar-conv]")) return void irPara(aberta, null);
+
+  const conv = ev.target.closest(".conv[data-thread]");
+  if (conv) return void irPara(aberta, conv.dataset.thread === threadAberta ? null : conv.dataset.thread);
+});
+
+// A linha da pessoa e um botao para o teclado tambem.
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Enter" && ev.key !== " ") return;
+  const linha = ev.target.closest?.(".pessoa[data-thread], .linha[data-thread]");
+  if (!linha || ev.target !== linha) return;
+  ev.preventDefault(); linha.click();
+});
+
+// Buscar é filtro do que já veio: não vale uma viagem ao servidor.
+document.addEventListener("input", (ev) => {
+  if (ev.target.id !== "buscaConversa") return;
+  buscaConversa = ev.target.value;
+  pintarMaquina();
+});
+
+window.addEventListener("hashchange", aplicarRota);
+
+const rota0 = lerRota();
+aberta = rota0.perfil; threadAberta = rota0.thread; vista = rota0.tela;
+if (aberta) filtroConversa = "espera";
+$("lista").hidden = vista !== "agora";
+$("analise").hidden = vista !== "analise";
+$("maquina").hidden = vista !== "maquina";
+for (const evento of ["pointerdown", "keydown", "wheel", "touchstart"]) {
+  document.addEventListener(evento, () => { ultimoToque = Date.now(); }, { passive: true });
+}
+// Voltar para a aba é pedido de gente: lê na hora, sem esperar o relógio.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  ultimoToque = Date.now();
+  carregar();
+});
+
+carregar();
+setInterval(() => carregar(true), 60000);
+</script>
+</body>
+</html>
