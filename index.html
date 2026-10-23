@@ -748,7 +748,7 @@ const nomeDe = (m) => m.rotulo || m.perfil_id;
    no menu e repete a loja, que hoje e uma so. */
 function nomeCurto(m) {
   // "(perfil antigo)" e marca de maquina zerada, nao nome de conta.
-  const r = String(nomeDe(m)).replace(/\s*\(perfil antigo\)\s*$/, "");
+  const r = String(nomeDe(m)).replace(/\s*\((perfil antigo|descontinuada)\)\s*$/, "");
   const conta = r.match(/\(([^)]+)\)\s*$/);
   if (conta) return conta[1].trim();
   const sem = r.replace(/^(fastline|magicar|gts motors)\s*[·:-]\s*/i, "").trim();
@@ -757,7 +757,7 @@ function nomeCurto(m) {
 /* Maquina zerada pelo botao "Zerar esta maquina" (app 0.7.37+): a linha
    fica no banco com o historico, e o rotulo ganha "(perfil antigo)". Nao e
    maquina parada: nao entra nos alertas nem na contagem de ligadas. */
-const ehDesativada = (m) => /\(perfil antigo\)\s*$/.test(String(m.rotulo || ""));
+const ehDesativada = (m) => /\((perfil antigo|descontinuada)\)\s*$/.test(String(m.rotulo || ""));
 const ehVaga = (m) => !m.ultimo_sinal && !ehDesativada(m);
 const dinheiro = (v) => (v === null || v === undefined ? "—" : "$" + Number(v).toLocaleString("en-US"));
 const relogio = (iso) => (iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" }) : "");
@@ -888,7 +888,7 @@ function pintarLista(d) {
   const maquinas = d.maquinas.map((m) => ({ ...m, ...estadoDe(m, agora, d.semSinalMin) }));
   const ativas = maquinas.filter((m) => !ehVaga(m) && !ehDesativada(m));
   const vagas = maquinas.filter(ehVaga).length;
-  const nomeDaMaquina = new Map(maquinas.map((m) => [m.perfil_id, ehDesativada(m) ? `${nomeCurto(m)} (antigo)` : nomeCurto(m)]));
+  const nomeDaMaquina = new Map(maquinas.map((m) => [m.perfil_id, ehDesativada(m) ? `${nomeCurto(m)} (descontinuada)` : nomeCurto(m)]));
 
   /* O mesmo telefone em duas maquinas e a MESMA pessoa: uma linha so, com as
      duas contas. Fica a espera mais antiga, que e a que decide a ordem. */
@@ -964,8 +964,8 @@ function pintarLista(d) {
   const cardsDesativadas = desativadas.map((m) => `<button class="card-maq desativada" data-perfil="${h(m.perfil_id)}">
       <span class="c1"><i class="luz"></i>
         <span><span class="nome">${h(nomeCurto(m))}</span><br><span class="conta">${h(String(nomeDe(m)).replace(/(\s*\([^)]*\))+\s*$/, ""))}</span></span>
-        <span class="sinal">desativada${m.ultimo_sinal ? ` em ${h(dataCurta(m.ultimo_sinal))}` : ""}</span></span>
-      <span class="faz">Perfil trocado. O histórico desta conta continua aqui.</span>
+        <span class="sinal">descontinuada${m.ultimo_sinal ? ` em ${h(dataCurta(m.ultimo_sinal))}` : ""}</span></span>
+      <span class="faz">Máquina descontinuada. O histórico desta conta continua guardado aqui.</span>
       <span class="nums"><div><b class="${m.listings_no_ar ? "" : "zero"}">${m.listings_no_ar ?? 0}</b><small>no ar quando saiu</small></div></span>
     </button>`).join("");
 
@@ -1000,7 +1000,7 @@ function pintarLista(d) {
       <div class="cards-maq">${cards}</div>
     </section>
     ${desativadas.length ? `<section class="secao">
-      <div class="fila-cab"><h2>Desativadas</h2><span class="partes">${desativadas.length} ${desativadas.length === 1 ? "conta trocada" : "contas trocadas"}. Os dados ficam guardados.</span></div>
+      <div class="fila-cab"><h2>Descontinuadas</h2><span class="partes">${desativadas.length} ${desativadas.length === 1 ? "máquina" : "máquinas"} fora de uso. Os dados ficam guardados no banco.</span></div>
       <div class="cards-maq">${cardsDesativadas}</div>
     </section>` : ""}`;
 
